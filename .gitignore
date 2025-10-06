@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AndroidStudio/Java .gitignore content
 target/
 *.iml
@@ -13,4 +14,20 @@ target/
 *.swo
 *.idea/
 *.gradle/
+=======
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+>>>>>>> 9cc7671 (Groupe-33-repo)
 local.properties
