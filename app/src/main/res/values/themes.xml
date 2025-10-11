@@ -1,5 +1,21 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.UTaste" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/purple_40</item>
+        <item name="colorPrimaryVariant">@color/purple_80</item>
+        <item name="colorOnPrimary">@color/white</item>
 
-    <style name="Theme.UTaste" parent="android:Theme.Material.Light.NoActionBar" />
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/pink_40</item>
+        <item name="colorSecondaryVariant">@color/pink_80</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- Background and surface colors -->
+        <item name="android:colorBackground">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/black</item>
+
+        <!-- Error -->
+        <item name="colorError">@color/error_red</item>
+    </style>
 </resources>
