@@ -16,6 +16,7 @@ public class UserRepository {
 
     private UserRepository() {
         usersByEmail = new HashMap<>();
+
         // Default accounts
         User admin = new User("admin@local", "admin-pwd", User.Role.ADMIN);
         admin.setFirstName("System");
@@ -36,6 +37,11 @@ public class UserRepository {
     public synchronized boolean addUser(User user) {
         if (user == null || user.getEmail() == null) return false;
         if (usersByEmail.containsKey(user.getEmail())) return false;
+
+        // Enregistrer date de création et modification au moment de l’ajout
+        user.setCreatedAt(System.currentTimeMillis());
+        user.setModifiedAt(System.currentTimeMillis());
+
         usersByEmail.put(user.getEmail(), user);
         return true;
     }
@@ -61,20 +67,20 @@ public class UserRepository {
         User existing = usersByEmail.get(originalEmail);
         if (existing == null) return false;
 
-        // If email changed and new email already exists -> fail
+        // Si l’email change, vérifier unicité
         if (!originalEmail.equals(updated.getEmail()) && usersByEmail.containsKey(updated.getEmail())) {
             return false;
         }
 
-        // Preserve createdAt if not set
+        // Préserver la date de création si elle est vide
         if (updated.getCreatedAt() == 0L) {
             updated.setCreatedAt(existing.getCreatedAt());
         }
 
-        // Ensure modified timestamp is updated
-        updated.touchModified();
+        // Mettre à jour la date de modification
+        updated.setModifiedAt(System.currentTimeMillis());
 
-        // If email changed, remove old key
+        // Si l’email change, remplacer la clé
         if (!originalEmail.equals(updated.getEmail())) {
             usersByEmail.remove(originalEmail);
         }

@@ -13,14 +13,18 @@ import com.example.utaste.data.UserRepository;
 import com.example.utaste.model.User;
 import com.example.utaste.util.Validators;
 
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class AdminActivity extends AppCompatActivity {
 
     private Button btnCreateWaiter, btnResetDB, btnManageProfiles, btnLogout, btnChangePassword;
     private ListView waiterListView;
     private ArrayAdapter<String> adapter;
-    private String currentAdminEmail = "admin@local"; // if you want real email, pass it via intent
+    private String currentAdminEmail = "admin@local"; // hardcoded for demo
+
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +45,6 @@ public class AdminActivity extends AppCompatActivity {
 
         btnCreateWaiter.setOnClickListener(v -> showCreateWaiterDialog());
         btnLogout.setOnClickListener(v -> {
-            // Go back to LoginActivity (do not simply finish to avoid leaving app)
             Intent i = new Intent(AdminActivity.this, LoginActivity.class);
             startActivity(i);
             finish();
@@ -57,18 +60,20 @@ public class AdminActivity extends AppCompatActivity {
         });
     }
 
-    // Refresh list view contents
+    // 🔹 Updated: show creation + modification dates in list
     private void refreshWaiterList() {
         adapter.clear();
         List<User> waiters = UserRepository.getInstance().listWaiters();
         for (User w : waiters) {
-            String label = w.getEmail() + (w.getFirstName() != null && !w.getFirstName().isEmpty() ? " — " + w.getFirstName() : "");
-            adapter.add(label);
+            String info = "Email: " + w.getEmail() +
+                    (w.getFirstName() != null && !w.getFirstName().isEmpty() ? " — " + w.getFirstName() : "") + "\n" +
+                    "Created: " + dateFormat.format(w.getCreatedAt()) + "\n" +
+                    "Modified: " + dateFormat.format(w.getModifiedAt());
+            adapter.add(info);
         }
         adapter.notifyDataSetChanged();
     }
 
-    // Create waiter dialog (same as before)
     private void showCreateWaiterDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Create Waiter");
@@ -96,7 +101,6 @@ public class AdminActivity extends AppCompatActivity {
         layout.addView(passwordInput);
 
         builder.setView(layout);
-
         builder.setPositiveButton("Create", null);
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
@@ -109,7 +113,6 @@ public class AdminActivity extends AppCompatActivity {
             String lastName = lastNameInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
-            // Default password if empty
             if (password.isEmpty()) password = "waiter-pwd";
 
             String validationError = Validators.validateNewUser(email, password);
@@ -138,13 +141,9 @@ public class AdminActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(waiter.getEmail())
                 .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        showEditWaiterDialog(waiter);
-                    } else if (which == 1) {
-                        confirmAndDeleteWaiter(waiter);
-                    } else {
-                        dialog.dismiss();
-                    }
+                    if (which == 0) showEditWaiterDialog(waiter);
+                    else if (which == 1) confirmAndDeleteWaiter(waiter);
+                    else dialog.dismiss();
                 })
                 .show();
     }
@@ -152,7 +151,7 @@ public class AdminActivity extends AppCompatActivity {
     private void confirmAndDeleteWaiter(User waiter) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete waiter")
-                .setMessage("Are you sure you want to delete " + waiter.getEmail() + " ?")
+                .setMessage("Are you sure you want to delete " + waiter.getEmail() + "?")
                 .setPositiveButton("Delete", (d, w) -> {
                     boolean ok = UserRepository.getInstance().deleteUser(waiter.getEmail());
                     if (ok) {
@@ -205,7 +204,6 @@ public class AdminActivity extends AppCompatActivity {
             String newLast = lastNameInput.getText().toString().trim();
             String newPass = passwordInput.getText().toString().trim();
 
-            // If password left blank, keep old password
             String passToValidate = newPass.isEmpty() ? waiter.getPassword() : newPass;
             String validation = Validators.validateNewUser(newEmail, passToValidate);
             if (validation != null) {
@@ -216,7 +214,6 @@ public class AdminActivity extends AppCompatActivity {
             User updated = new User(newEmail, passToValidate, waiter.getRole());
             updated.setFirstName(newFirst);
             updated.setLastName(newLast);
-            // preserve createdAt
             updated.setCreatedAt(waiter.getCreatedAt());
             updated.touchModified();
 
@@ -231,7 +228,6 @@ public class AdminActivity extends AppCompatActivity {
         });
     }
 
-    // Change password dialog for the currently logged-in admin (currentAdminEmail)
     private void showChangePasswordDialog(String userEmail) {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -271,7 +267,7 @@ public class AdminActivity extends AppCompatActivity {
             if (!np1.equals(np2)) { Toast.makeText(this,"New passwords do not match",Toast.LENGTH_SHORT).show(); return; }
             if (np1.length() < 5) { Toast.makeText(this,"Password must be at least 5 chars",Toast.LENGTH_SHORT).show(); return; }
 
-            user.setPassword(np1); // touchModified called inside setter
+            user.setPassword(np1); // touchModified inside setter
             Toast.makeText(this,"Password changed",Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
