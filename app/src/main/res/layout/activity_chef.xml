@@ -1,29 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/chefRoot"
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
+        android:id="@+id/chefWelcome"
         android:text="Welcome, Chef"
         android:textSize="20sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
     <Button
+        android:id="@+id/btnCreateRecipe"
         android:text="Create Recipe"
         android:enabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
     <Button
+        android:id="@+id/btnAddIngredients"
         android:text="Add Ingredients"
         android:enabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
-    <!-- Logout button -->
+    <Button
+        android:id="@+id/btnChangePassword"
+        android:text="Change Password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/pink_40"
+        android:textColor="@color/white"/>
+
     <Button
         android:id="@+id/btnLogout"
         android:text="Logout"
