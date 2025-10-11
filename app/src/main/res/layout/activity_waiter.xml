@@ -1,26 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    android:id="@+id/waiterLayout"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/waiterLayout"
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
+        android:id="@+id/waiterWelcome"
         android:text="Welcome, Waiter"
         android:textSize="20sp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
     <Button
+        android:id="@+id/btnViewRecipes"
         android:text="View Recipes"
         android:enabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
     <Button
+        android:id="@+id/btnRecordSale"
         android:text="Record Sale"
         android:enabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btnChangePassword"
+        android:text="Change Password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/pink_40"
+        android:textColor="@color/white"/>
+
+    <Button
+        android:id="@+id/btnLogout"
+        android:text="Logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/pink_40"
+        android:textColor="@color/white"/>
 </LinearLayout>

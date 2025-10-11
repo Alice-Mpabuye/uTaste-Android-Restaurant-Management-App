@@ -4,13 +4,18 @@ import android.util.Patterns;
 
 public class Validators {
 
+    /**
+     * Validator for login fields. Accepts local emails like admin@local, chef@local, waiter@local,
+     * or any email that matches Android Patterns.EMAIL_ADDRESS.
+     */
     public static String validateLoginFields(String email, String password) {
         if (email == null || email.trim().isEmpty()) {
             return "Email is required.";
         }
 
-        // Accept local emails like admin@local, chef@local, waiter@local
-        if (!email.endsWith(".local") && !email.endsWith("@local") && !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        // allow local addresses that end with ".local" or "@local"
+        String e = email.trim();
+        if (!(e.endsWith(".local") || e.endsWith("@local") || Patterns.EMAIL_ADDRESS.matcher(e).matches())) {
             return "Email format is invalid.";
         }
 
@@ -21,16 +26,19 @@ public class Validators {
             return "Password must be at least 5 characters.";
         }
 
-        return null; // OK
+        return null;
     }
 
+    /**
+     * Validator for creating/updating users. Same relaxed rule for local addresses.
+     */
     public static String validateNewUser(String email, String password) {
         if (email == null || email.trim().isEmpty()) {
             return "Email is required.";
         }
 
-        // Relaxed validator: accept .local or @local
-        if (!email.endsWith(".local") && !email.endsWith("@local") && !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        String e = email.trim();
+        if (!(e.endsWith(".local") || e.endsWith("@local") || Patterns.EMAIL_ADDRESS.matcher(e).matches())) {
             return "Email format is invalid.";
         }
 
