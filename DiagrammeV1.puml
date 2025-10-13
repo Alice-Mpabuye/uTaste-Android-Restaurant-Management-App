@@ -1,0 +1,149 @@
+@startuml
+
+'============
+'data classes
+'============
+
+
+package "com.example.utaste.data" {
+    class DbHelper {
+
+    }
+    class UserRepository{
+        - static UserRepository instance
+        - final Map<String, user> usersByEmail
+        - UserRepository()
+        + static synchronized UserRepository getInstance()
+        + synchronized boolean addUser(user newUser)
+        + synchronized User findByEmail(String email)
+        + synchronized boolean authenticate(String email, String password)
+
+        + synchronized boolean updateUser(String originalEmail, User updated)
+        + synchronized boolean deleteUser(String email)
+        + synchronized List<user> listWaiters()
+        + synchronized List<user> listAllUsers()
+    }
+}
+
+
+'=============
+'model classes
+'=============
+
+package "com.example.utaste.model" {
+
+    class user{
+        + enum Role { ADMIN, CHEF, WAITER }
+        - String email
+        - String password
+        - String firstName
+        - String lastName
+        - Role role
+        - long createdAt
+        - long modifiedAt
+        + user(String email, String password, Role role)
+    
+        + String getEmail()
+        + void setEmail(String email)
+        + String getPassword()
+        + void setPassword(String password)
+        + String getFirstName()
+        + void setFirstName(String firstName)
+        + String getLastName()
+        + void setLastName(String lastName)
+        + Role getRole()
+        + void setRole(Role role)
+        + long getCreatedAt()
+        + void setCreatedAt(long createdAt)
+        + long getModifiedAt()
+        + void setModifiedAt(long modifiedAt)
+        + void touchModified()
+        + String toString()
+    }
+}
+
+
+'============
+'UI classes
+'============
+
+package "com.example.utaste.ui" {
+
+    class AdminActivity{
+        - Button btnCreateWaiter
+        - Button btnResetDB
+        - Button btnManageProfiles
+        - Button btnLogout
+        - Button btnChangePassword;
+
+        - ListView waiterListView
+        - ArrayAdapter<String> adapter
+        - String currentAdminEmail = "admin@local"
+        - final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
+        # void onCreate(Bundle savedInstanceState)
+        - void refreshWaiterList()
+        - void showCreateWaiterDialog()
+        - void showWaiterOptionsDialog(User waiter)
+        - void confirmAndDeleteWaiter(User waiter)
+        - void showEditWaiterDialog(User waiter)
+        - void showChangePasswordDialog(Strig userEmail)
+    }
+
+    class ChefActivity{
+        - Button btnLogout
+        - Button btnChangePassword
+        - String currentChefEmail = "chef@local"
+
+        # void onCreate(Bundle savedInstanceState)
+        - void showChangePasswordDialog(String userEmail)
+    }
+
+    class LoginActivity{
+        - EditText emailField
+        - EditText passField;
+        - TextView errorText
+
+        # void onCreate(Bundle savedInstanceState)
+        - void showError(String msg)
+        - void navigateToRoleHome(User u)
+    }
+
+    class WaiterActivity{
+        - Button btnLogout
+        - Button btnChangePassword
+        - String currentWaiterEmail = null
+
+        # void onCreate(Bundle savedInstanceState)
+        - void showChangePasswordDialog(String userEmail)
+    }
+
+    class WelcomeActivity{
+        # void onCreate(Bundle savedInstanceState)
+    }
+
+    class MainActivity{
+        # void onCreate(Bundle savedInstanceState)
+    }
+
+    '============ relationships ============
+
+    AdminActivity --> AppCompatActivity : extends
+    ChefActivity --> AppCompatActivity : extends
+    LoginActivity --> AppCompatActivity : extends
+    WaiterActivity --> AppCompatActivity : extends
+    WelcomeActivity --> AppCompatActivity : extends
+    MainActivity --> AppCompatActivity : extends
+}
+
+'=============
+'utility classes
+'=============
+
+package "com.example.utaste.util" {
+    class Validators{
+        + static String validateLoginFields(String email, String password)
+        + static String validateNewUser(String email, String password)
+    }
+}
+@enduml
