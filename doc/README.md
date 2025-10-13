@@ -8,7 +8,7 @@ Ceci est notre fichier README au format Markdown contenant des informations util
 - des limites éventuelles (anomalie, fonctionnalité manquante...)
 
 ## Première version de notre modèle conceptuel
-![Diagramme conceptuel](doc/DiagrammeV1.png)
+![Diagramme conceptuel](DiagrammeV1.png)
 
 ## Description de notre projet
 uTaste est une application Android développée en Java avec Android Studio dans le cadre du cours SEG2505 – Conception et implémentation logicielle à l’Université d’Ottawa. L’objectif est de créer une solution logicielle complète pour la gestion d’un restaurant gastronomique, intégrant des rôles utilisateurs : administrateur, chef cuisinier et serveur.
