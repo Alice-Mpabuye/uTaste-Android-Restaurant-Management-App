@@ -1,8 +1,14 @@
 package com.example.utaste.ui;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.utaste.R;
@@ -12,19 +18,21 @@ import com.example.utaste.model.User;
 public class WaiterActivity extends AppCompatActivity {
 
     private Button btnLogout, btnChangePassword;
-
-    // If you want to receive actual waiter email, pass via intent
     private String currentWaiterEmail = null;
+    private UserRepository userRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_waiter);
 
+        // Initialize repository with context
+        userRepository = UserRepository.getInstance();
+        userRepository.init(getApplicationContext());
+
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
 
-        // try to get passed email
         if (getIntent() != null && getIntent().hasExtra("userEmail")) {
             currentWaiterEmail = getIntent().getStringExtra("userEmail");
         }
@@ -37,8 +45,7 @@ public class WaiterActivity extends AppCompatActivity {
 
         btnChangePassword.setOnClickListener(v -> {
             if (currentWaiterEmail == null) {
-                // fallback: display message
-                android.widget.Toast.makeText(this, "No user email available", android.widget.Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No user email available", Toast.LENGTH_SHORT).show();
             } else {
                 showChangePasswordDialog(currentWaiterEmail);
             }
@@ -46,43 +53,58 @@ public class WaiterActivity extends AppCompatActivity {
     }
 
     private void showChangePasswordDialog(String userEmail) {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
-        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
-        layout.setPadding(50,20,50,10);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(50, 20, 50, 10);
 
-        final android.widget.EditText oldPwd = new android.widget.EditText(this);
+        final EditText oldPwd = new EditText(this);
         oldPwd.setHint("Current password");
-        oldPwd.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        oldPwd.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(oldPwd);
 
-        final android.widget.EditText newPwd = new android.widget.EditText(this);
+        final EditText newPwd = new EditText(this);
         newPwd.setHint("New password");
-        newPwd.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        newPwd.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(newPwd);
 
-        final android.widget.EditText newPwd2 = new android.widget.EditText(this);
+        final EditText newPwd2 = new EditText(this);
         newPwd2.setHint("Confirm new password");
-        newPwd2.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        newPwd2.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(newPwd2);
 
         builder.setTitle("Change password");
         builder.setView(layout);
-        builder.setPositiveButton("Change", (d,w) -> {
+        builder.setPositiveButton("Change", (d, w) -> {
             String oldp = oldPwd.getText().toString();
             String np1 = newPwd.getText().toString();
             String np2 = newPwd2.getText().toString();
 
-            User user = UserRepository.getInstance().findByEmail(userEmail);
-            if (user == null) { android.widget.Toast.makeText(this,"User not found",android.widget.Toast.LENGTH_SHORT).show(); return; }
-            if (!user.getPassword().equals(oldp)) { android.widget.Toast.makeText(this,"Current password incorrect",android.widget.Toast.LENGTH_SHORT).show(); return; }
-            if (!np1.equals(np2)) { android.widget.Toast.makeText(this,"New passwords do not match",android.widget.Toast.LENGTH_SHORT).show(); return; }
-            if (np1.length() < 5) { android.widget.Toast.makeText(this,"Password must be at least 5 chars",android.widget.Toast.LENGTH_SHORT).show(); return; }
+            User user = userRepository.findByEmail(userEmail);
+            if (user == null) {
+                Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!user.getPassword().equals(oldp)) {
+                Toast.makeText(this, "Current password incorrect", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!np1.equals(np2)) {
+                Toast.makeText(this, "New passwords do not match", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (np1.length() < 5) {
+                Toast.makeText(this, "Password must be at least 5 chars", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
+            // Persist password change to DB
             user.setPassword(np1);
-            android.widget.Toast.makeText(this,"Password changed",android.widget.Toast.LENGTH_SHORT).show();
+            userRepository.updateUser(user.getEmail(), user);
+
+            Toast.makeText(this, "Password changed", Toast.LENGTH_SHORT).show();
         });
-        builder.setNegativeButton("Cancel", (d,w)-> d.dismiss());
+        builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
         builder.show();
     }
 }
