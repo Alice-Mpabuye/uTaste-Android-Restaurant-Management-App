@@ -1,109 +1,242 @@
 package com.example.utaste.data;
 
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+
 import com.example.utaste.model.User;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Executors;
 
 /**
- * Simple in-memory repository used for Livrable 1.
+ * Repository backed by SQLite. Call init(context) once before use.
  */
 public class UserRepository {
     private static UserRepository instance;
-    private final Map<String, User> usersByEmail;
+    private final UserDbHelper dbHelper;
+    private final Context context;
 
-    private UserRepository() {
-        usersByEmail = new HashMap<>();
+    private UserRepository(Context ctx) {
+        this.context = ctx.getApplicationContext();
+        this.dbHelper = new UserDbHelper(context);
+        ensureDefaultAccounts();
+    }
 
-        // Default accounts
-        User admin = new User("admin@local", "admin-pwd", User.Role.ADMIN);
-        admin.setFirstName("System");
-        admin.setLastName("Admin");
-        usersByEmail.put(admin.getEmail(), admin);
-
-        User chef = new User("chef@local", "chef-pwd", User.Role.CHEF);
-        chef.setFirstName("Head");
-        chef.setLastName("Chef");
-        usersByEmail.put(chef.getEmail(), chef);
+    public static synchronized void init(Context context) {
+        if (instance == null) instance = new UserRepository(context);
     }
 
     public static synchronized UserRepository getInstance() {
-        if (instance == null) instance = new UserRepository();
+        if (instance == null)
+            throw new IllegalStateException("UserRepository not initialized. Call UserRepository.init(context) first.");
         return instance;
     }
 
-    public synchronized boolean addUser(User user) {
+    // Ensure admin and chef exist at first run
+    private void ensureDefaultAccounts() {
+        // run on background thread to avoid disk op on UI thread
+        Executors.newSingleThreadExecutor().execute(() -> {
+            if (findByEmailInternal("admin@local") == null) {
+                User admin = new User("admin@local", "admin-pwd", User.Role.ADMIN);
+                admin.setFirstName("System");
+                admin.setLastName("Admin");
+                insertUserInternal(admin);
+            }
+            if (findByEmailInternal("chef@local") == null) {
+                User chef = new User("chef@local", "chef-pwd", User.Role.CHEF);
+                chef.setFirstName("Head");
+                chef.setLastName("Chef");
+                insertUserInternal(chef);
+            }
+        });
+    }
+
+    // ---------------------------
+    // Public API (synchronous helpers; you should call from background thread)
+    // ---------------------------
+
+    public boolean addUser(User user) {
         if (user == null || user.getEmail() == null) return false;
-        if (usersByEmail.containsKey(user.getEmail())) return false;
-
-        // Enregistrer date de création et modification au moment de l’ajout
-        user.setCreatedAt(System.currentTimeMillis());
-        user.setModifiedAt(System.currentTimeMillis());
-
-        usersByEmail.put(user.getEmail(), user);
-        return true;
+        synchronized (this) {
+            if (findByEmailInternal(user.getEmail()) != null) return false;
+            return insertUserInternal(user);
+        }
     }
 
-    public synchronized User findByEmail(String email) {
+    public User findByEmail(String email) {
         if (email == null) return null;
-        return usersByEmail.get(email);
+        synchronized (this) {
+            return findByEmailInternal(email);
+        }
     }
 
-    public synchronized boolean authenticate(String email, String password) {
+    public boolean authenticate(String email, String password) {
         User u = findByEmail(email);
         if (u == null) return false;
         return u.getPassword().equals(password);
     }
 
-    /**
-     * Update an existing user.
-     * If email changes, ensure uniqueness then move entry.
-     * Returns true if update succeeded.
-     */
-    public synchronized boolean updateUser(String originalEmail, User updated) {
+    public boolean updateUser(String originalEmail, User updated) {
         if (originalEmail == null || updated == null || updated.getEmail() == null) return false;
-        User existing = usersByEmail.get(originalEmail);
-        if (existing == null) return false;
+        synchronized (this) {
+            User existing = findByEmailInternal(originalEmail);
+            if (existing == null) return false;
+            // if email changed and new exists -> fail
+            if (!originalEmail.equals(updated.getEmail()) && findByEmailInternal(updated.getEmail()) != null) {
+                return false;
+            }
+            // preserve createdAt if zero
+            if (updated.getCreatedAt() == 0L) updated.setCreatedAt(existing.getCreatedAt());
+            updated.setModifiedAt(System.currentTimeMillis());
 
-        // Si l’email change, vérifier unicité
-        if (!originalEmail.equals(updated.getEmail()) && usersByEmail.containsKey(updated.getEmail())) {
-            return false;
+            // perform update (may include primary key change)
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            db.beginTransaction();
+            try {
+                // if email changed, delete old row, then insert new
+                if (!originalEmail.equals(updated.getEmail())) {
+                    db.delete(UserDbHelper.TABLE_USERS, UserDbHelper.COL_EMAIL + "=?", new String[]{originalEmail});
+                    insertUserInternal(updated, db);
+                } else {
+                    ContentValues cv = userToContentValues(updated);
+                    db.update(UserDbHelper.TABLE_USERS, cv, UserDbHelper.COL_EMAIL + "=?", new String[]{originalEmail});
+                }
+                db.setTransactionSuccessful();
+                return true;
+            } finally {
+                db.endTransaction();
+            }
         }
-
-        // Préserver la date de création si elle est vide
-        if (updated.getCreatedAt() == 0L) {
-            updated.setCreatedAt(existing.getCreatedAt());
-        }
-
-        // Mettre à jour la date de modification
-        updated.setModifiedAt(System.currentTimeMillis());
-
-        // Si l’email change, remplacer la clé
-        if (!originalEmail.equals(updated.getEmail())) {
-            usersByEmail.remove(originalEmail);
-        }
-
-        usersByEmail.put(updated.getEmail(), updated);
-        return true;
     }
 
-    public synchronized boolean deleteUser(String email) {
-        if (email == null || !usersByEmail.containsKey(email)) return false;
-        usersByEmail.remove(email);
-        return true;
+    public boolean deleteUser(String email) {
+        if (email == null) return false;
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int removed = db.delete(UserDbHelper.TABLE_USERS, UserDbHelper.COL_EMAIL + "=?", new String[]{email});
+        return removed > 0;
     }
 
-    public synchronized List<User> listWaiters() {
+    public List<User> listWaiters() {
         List<User> res = new ArrayList<>();
-        for (User u : usersByEmail.values()) {
-            if (u.getRole() == User.Role.WAITER) res.add(u);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor c = db.query(UserDbHelper.TABLE_USERS,
+                null,
+                UserDbHelper.COL_ROLE + "=?",
+                new String[]{User.Role.WAITER.name()},
+                null, null, null);
+        try {
+            while (c.moveToNext()) {
+                res.add(cursorToUser(c));
+            }
+        } finally {
+            c.close();
         }
         return res;
     }
 
-    public synchronized List<User> listAllUsers() {
-        return new ArrayList<>(usersByEmail.values());
+    public List<User> listAllUsers() {
+        List<User> res = new ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor c = db.query(UserDbHelper.TABLE_USERS, null, null, null, null, null, null);
+        try {
+            while (c.moveToNext()) res.add(cursorToUser(c));
+        } finally {
+            c.close();
+        }
+        return res;
+    }
+
+    // ---------------------------
+    // Internal helpers (expect to be called with synchronization when needed)
+    // ---------------------------
+
+    private boolean insertUserInternal(User user) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        return insertUserInternal(user, db);
+    }
+
+    private boolean insertUserInternal(User user, SQLiteDatabase db) {
+        if (user.getCreatedAt() == 0L) user.setCreatedAt(System.currentTimeMillis());
+        user.setModifiedAt(System.currentTimeMillis());
+        ContentValues cv = userToContentValues(user);
+        long id = db.insert(UserDbHelper.TABLE_USERS, null, cv);
+        return id != -1;
+    }
+
+    private ContentValues userToContentValues(User u) {
+        ContentValues cv = new ContentValues();
+        cv.put(UserDbHelper.COL_EMAIL, u.getEmail());
+        cv.put(UserDbHelper.COL_PASSWORD, u.getPassword());
+        cv.put(UserDbHelper.COL_FIRST, u.getFirstName());
+        cv.put(UserDbHelper.COL_LAST, u.getLastName());
+        cv.put(UserDbHelper.COL_ROLE, u.getRole().name());
+        cv.put(UserDbHelper.COL_CREATED, u.getCreatedAt());
+        cv.put(UserDbHelper.COL_MODIFIED, u.getModifiedAt());
+        return cv;
+    }
+
+    private User cursorToUser(Cursor c) {
+        String email = c.getString(c.getColumnIndexOrThrow(UserDbHelper.COL_EMAIL));
+        String password = c.getString(c.getColumnIndexOrThrow(UserDbHelper.COL_PASSWORD));
+        String first = c.getString(c.getColumnIndexOrThrow(UserDbHelper.COL_FIRST));
+        String last = c.getString(c.getColumnIndexOrThrow(UserDbHelper.COL_LAST));
+        String roleStr = c.getString(c.getColumnIndexOrThrow(UserDbHelper.COL_ROLE));
+        long created = c.getLong(c.getColumnIndexOrThrow(UserDbHelper.COL_CREATED));
+        long modified = c.getLong(c.getColumnIndexOrThrow(UserDbHelper.COL_MODIFIED));
+
+        User.Role role;
+        try {
+            role = User.Role.valueOf(roleStr);
+        } catch (Exception e) {
+            role = User.Role.WAITER; // fallback
+        }
+        User u = new User(email, password, role);
+        u.setFirstName(first);
+        u.setLastName(last);
+        u.setCreatedAt(created);
+        u.setModifiedAt(modified);
+        return u;
+    }
+
+    private User findByEmailInternal(String email) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor c = db.query(UserDbHelper.TABLE_USERS, null,
+                UserDbHelper.COL_EMAIL + "=?",
+                new String[]{email},
+                null, null, null);
+        try {
+            if (c.moveToFirst()) {
+                return cursorToUser(c);
+            } else {
+                return null;
+            }
+        } finally {
+            c.close();
+        }
+    }
+
+    // For admin reset DB: delete all waiters, recipes, sales, etc.
+    // For now implement user-only reset (deliverable 2 will extend this).
+    public void resetDatabaseToDefaults() {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            db.beginTransaction();
+            try {
+                db.delete(UserDbHelper.TABLE_USERS, null, null);
+                // recreate default accounts:
+                User admin = new User("admin@local", "admin-pwd", User.Role.ADMIN);
+                admin.setFirstName("System"); admin.setLastName("Admin");
+                insertUserInternal(admin, db);
+                User chef = new User("chef@local", "chef-pwd", User.Role.CHEF);
+                chef.setFirstName("Head"); chef.setLastName("Chef");
+                insertUserInternal(chef, db);
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        });
     }
 }

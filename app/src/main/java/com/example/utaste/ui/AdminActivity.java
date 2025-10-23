@@ -14,8 +14,11 @@ import com.example.utaste.model.User;
 import com.example.utaste.util.Validators;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AdminActivity extends AppCompatActivity {
 
@@ -25,6 +28,7 @@ public class AdminActivity extends AppCompatActivity {
     private String currentAdminEmail = "admin@local"; // hardcoded for demo
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +43,7 @@ public class AdminActivity extends AppCompatActivity {
         waiterListView = findViewById(R.id.waiterListView);
 
         // Setup list adapter
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<>());
         waiterListView.setAdapter(adapter);
         refreshWaiterList();
 
@@ -53,25 +57,34 @@ public class AdminActivity extends AppCompatActivity {
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog(currentAdminEmail));
 
         waiterListView.setOnItemClickListener((parent, view, position, id) -> {
-            List<User> waiters = UserRepository.getInstance().listWaiters();
-            if (position < 0 || position >= waiters.size()) return;
-            User selected = waiters.get(position);
-            showWaiterOptionsDialog(selected);
+            // Access list on background thread to ensure consistency
+            executor.execute(() -> {
+                List<User> waiters = UserRepository.getInstance().listWaiters();
+                if (position < 0 || position >= waiters.size()) return;
+                User selected = waiters.get(position);
+                runOnUiThread(() -> showWaiterOptionsDialog(selected));
+            });
         });
     }
 
-    // 🔹 Updated: show creation + modification dates in list
+    // Keep same UI but fetch list in background
     private void refreshWaiterList() {
-        adapter.clear();
-        List<User> waiters = UserRepository.getInstance().listWaiters();
-        for (User w : waiters) {
-            String info = "Email: " + w.getEmail() +
-                    (w.getFirstName() != null && !w.getFirstName().isEmpty() ? " — " + w.getFirstName() : "") + "\n" +
-                    "Created: " + dateFormat.format(w.getCreatedAt()) + "\n" +
-                    "Modified: " + dateFormat.format(w.getModifiedAt());
-            adapter.add(info);
-        }
-        adapter.notifyDataSetChanged();
+        executor.execute(() -> {
+            List<User> waiters = UserRepository.getInstance().listWaiters();
+            List<String> items = new ArrayList<>();
+            for (User w : waiters) {
+                String info = "Email: " + w.getEmail() +
+                        (w.getFirstName() != null && !w.getFirstName().isEmpty() ? " — " + w.getFirstName() : "") + "\n" +
+                        "Created: " + dateFormat.format(w.getCreatedAt()) + "\n" +
+                        "Modified: " + dateFormat.format(w.getModifiedAt());
+                items.add(info);
+            }
+            runOnUiThread(() -> {
+                adapter.clear();
+                adapter.addAll(items);
+                adapter.notifyDataSetChanged();
+            });
+        });
     }
 
     private void showCreateWaiterDialog() {
@@ -104,7 +117,7 @@ public class AdminActivity extends AppCompatActivity {
         builder.setPositiveButton("Create", null);
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
-        AlertDialog dialog = builder.create();
+        final AlertDialog dialog = builder.create();
         dialog.show();
 
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
@@ -125,14 +138,19 @@ public class AdminActivity extends AppCompatActivity {
             newWaiter.setFirstName(firstName);
             newWaiter.setLastName(lastName);
 
-            boolean added = UserRepository.getInstance().addUser(newWaiter);
-            if (!added) {
-                Toast.makeText(this, "Email already exists!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Waiter created successfully!", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-                refreshWaiterList();
-            }
+            // Insert on background thread
+            executor.execute(() -> {
+                boolean added = UserRepository.getInstance().addUser(newWaiter);
+                runOnUiThread(() -> {
+                    if (!added) {
+                        Toast.makeText(this, "Email already exists!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Waiter created successfully!", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        refreshWaiterList();
+                    }
+                });
+            });
         });
     }
 
@@ -153,13 +171,17 @@ public class AdminActivity extends AppCompatActivity {
                 .setTitle("Delete waiter")
                 .setMessage("Are you sure you want to delete " + waiter.getEmail() + "?")
                 .setPositiveButton("Delete", (d, w) -> {
-                    boolean ok = UserRepository.getInstance().deleteUser(waiter.getEmail());
-                    if (ok) {
-                        Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
-                        refreshWaiterList();
-                    } else {
-                        Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
-                    }
+                    executor.execute(() -> {
+                        boolean ok = UserRepository.getInstance().deleteUser(waiter.getEmail());
+                        runOnUiThread(() -> {
+                            if (ok) {
+                                Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
+                                refreshWaiterList();
+                            } else {
+                                Toast.makeText(this, "Delete failed", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -195,7 +217,7 @@ public class AdminActivity extends AppCompatActivity {
         builder.setPositiveButton("Save", null);
         builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
 
-        AlertDialog dialog = builder.create();
+        final AlertDialog dialog = builder.create();
         dialog.show();
 
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
@@ -217,14 +239,18 @@ public class AdminActivity extends AppCompatActivity {
             updated.setCreatedAt(waiter.getCreatedAt());
             updated.touchModified();
 
-            boolean ok = UserRepository.getInstance().updateUser(waiter.getEmail(), updated);
-            if (!ok) {
-                Toast.makeText(this, "Email already exists or update failed", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Updated", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-                refreshWaiterList();
-            }
+            executor.execute(() -> {
+                boolean ok = UserRepository.getInstance().updateUser(waiter.getEmail(), updated);
+                runOnUiThread(() -> {
+                    if (!ok) {
+                        Toast.makeText(this, "Email already exists or update failed", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Updated", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                        refreshWaiterList();
+                    }
+                });
+            });
         });
     }
 
@@ -248,7 +274,7 @@ public class AdminActivity extends AppCompatActivity {
         newPwd2.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(newPwd2);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        final AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Change password")
                 .setView(layout)
                 .setPositiveButton("Change", null)
@@ -257,19 +283,60 @@ public class AdminActivity extends AppCompatActivity {
         dialog.show();
 
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String oldp = oldPwd.getText().toString();
-            String np1 = newPwd.getText().toString();
-            String np2 = newPwd2.getText().toString();
+            // load current user from DB then update
+            executor.execute(() -> {
+                User user = UserRepository.getInstance().findByEmail(userEmail);
+                if (user == null) {
+                    runOnUiThread(() -> Toast.makeText(this,"User not found",Toast.LENGTH_SHORT).show());
+                    return;
+                }
 
-            User user = UserRepository.getInstance().findByEmail(userEmail);
-            if (user == null) { Toast.makeText(this,"User not found",Toast.LENGTH_SHORT).show(); return; }
-            if (!user.getPassword().equals(oldp)) { Toast.makeText(this,"Current password incorrect",Toast.LENGTH_SHORT).show(); return; }
-            if (!np1.equals(np2)) { Toast.makeText(this,"New passwords do not match",Toast.LENGTH_SHORT).show(); return; }
-            if (np1.length() < 5) { Toast.makeText(this,"Password must be at least 5 chars",Toast.LENGTH_SHORT).show(); return; }
+                String oldp = oldPwd.getText().toString();
+                String np1 = newPwd.getText().toString();
+                String np2 = newPwd2.getText().toString();
 
-            user.setPassword(np1); // touchModified inside setter
-            Toast.makeText(this,"Password changed",Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
+                // checks on UI thread because they use EditText fields (but done here inside executor to keep behavior consistent)
+                runOnUiThread(() -> {
+                    // re-check values on UI thread to avoid EditText access from background thread
+                    String oldpUI = oldPwd.getText().toString();
+                    String np1UI = newPwd.getText().toString();
+                    String np2UI = newPwd2.getText().toString();
+
+                    // Do validation and then perform DB update on background thread
+                    if (!user.getPassword().equals(oldpUI)) {
+                        Toast.makeText(this,"Current password incorrect",Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (!np1UI.equals(np2UI)) {
+                        Toast.makeText(this,"New passwords do not match",Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (np1UI.length() < 5) {
+                        Toast.makeText(this,"Password must be at least 5 chars",Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Perform update
+                    executor.execute(() -> {
+                        user.setPassword(np1UI);
+                        boolean ok = UserRepository.getInstance().updateUser(user.getEmail(), user);
+                        runOnUiThread(() -> {
+                            if (ok) {
+                                Toast.makeText(this,"Password changed",Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            } else {
+                                Toast.makeText(this,"Failed to update password",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    });
+                });
+            });
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
     }
 }

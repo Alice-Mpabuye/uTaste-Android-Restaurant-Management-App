@@ -11,50 +11,64 @@ import com.example.utaste.data.UserRepository;
 import com.example.utaste.model.User;
 import com.example.utaste.util.Validators;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText emailField, passField;
     private TextView errorText;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        // Find views (IDs must match your activity_login.xml)
         emailField = findViewById(R.id.email);
         passField = findViewById(R.id.password);
         errorText = findViewById(R.id.errorText);
         Button loginBtn = findViewById(R.id.loginBtn);
 
-        loginBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Ensure any uncommitted text is read
-                emailField.clearFocus();
-                passField.clearFocus();
+        loginBtn.setOnClickListener(v -> {
+            // Ensure any uncommitted text is read
+            emailField.clearFocus();
+            passField.clearFocus();
 
-                String email = emailField.getText().toString().trim();
-                String pass = passField.getText().toString();
+            String email = emailField.getText().toString().trim();
+            String pass = passField.getText().toString();
 
-                System.out.println("Email input: '" + email + "'");
-
-                // Validate fields using relaxed rules for local users
-                String validation = Validators.validateLoginFields(email, pass);
-                if (validation != null) {
-                    showError(validation);
-                    return;
-                }
-
-                UserRepository repo = UserRepository.getInstance();
-                boolean ok = repo.authenticate(email, pass);
-                if (!ok) {
-                    showError("Invalid credentials. Check email/password.");
-                    return;
-                }
-
-                User u = repo.findByEmail(email);
-                navigateToRoleHome(u);
+            // Validate fields
+            String validation = Validators.validateLoginFields(email, pass);
+            if (validation != null) {
+                showError(validation);
+                return;
             }
+
+            // Run authentication off UI thread
+            executor.execute(() -> {
+                try {
+                    UserRepository repo = UserRepository.getInstance();
+                    boolean ok = repo.authenticate(email, pass);
+                    if (!ok) {
+                        runOnUiThread(() -> showError("Invalid credentials. Check email/password."));
+                        return;
+                    }
+
+                    User u = repo.findByEmail(email);
+                    if (u == null) {
+                        runOnUiThread(() -> showError("User record not found after authentication."));
+                        return;
+                    }
+
+                    // Navigate on UI thread
+                    runOnUiThread(() -> navigateToRoleHome(u));
+                } catch (Exception e) {
+                    // Unexpected error — show message on UI
+                    runOnUiThread(() -> showError("An error occurred: " + e.getMessage()));
+                }
+            });
         });
     }
 
@@ -75,5 +89,11 @@ public class LoginActivity extends AppCompatActivity {
         i.putExtra("userEmail", u.getEmail());
         startActivity(i);
         finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executor.shutdownNow();
     }
 }
