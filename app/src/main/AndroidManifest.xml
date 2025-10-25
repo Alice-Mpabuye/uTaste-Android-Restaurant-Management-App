@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.utaste">
 
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-permission android:name="android.permission.CAMERA"/>
+
     <application
         android:name=".MyApp"
         android:allowBackup="true"
@@ -25,7 +30,14 @@
         <activity android:name=".ui.LoginActivity" />
         <activity android:name=".ui.AdminActivity" />
         <activity android:name=".ui.ChefActivity" />
+        <activity android:name=".ui.CaptureAct"
+            android:screenOrientation="fullSensor"
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".ui.WaiterActivity" />
+        <activity android:name=".ui.CreateRecipeActivity"/>
+        <activity android:name=".ui.RecipeListActivity"/>
+
 
     </application>
 

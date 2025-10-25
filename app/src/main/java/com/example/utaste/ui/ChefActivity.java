@@ -1,9 +1,11 @@
 package com.example.utaste.ui;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -17,23 +19,24 @@ import com.example.utaste.model.User;
 
 public class ChefActivity extends AppCompatActivity {
 
-    private Button btnLogout, btnChangePassword;
+    private Button btnLogout, btnChangePassword, btnCreateRecipe, btnMyRecipes;
     private String currentChefEmail = "chef@local";
     private UserRepository userRepository;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chef);
 
-        // Initialize UserRepository with context
         userRepository = UserRepository.getInstance();
         userRepository.init(getApplicationContext());
 
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        btnCreateRecipe = findViewById(R.id.btnCreateRecipe);
+        btnMyRecipes = findViewById(R.id.btnMyRecipes);
 
-        // Try to get passed email (if login activity sent it)
         if (getIntent() != null && getIntent().hasExtra("userEmail")) {
             currentChefEmail = getIntent().getStringExtra("userEmail");
         }
@@ -45,6 +48,16 @@ public class ChefActivity extends AppCompatActivity {
         });
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog(currentChefEmail));
+
+        btnCreateRecipe.setOnClickListener(v -> {
+            Intent n = new Intent(ChefActivity.this, CreateRecipeActivity.class);
+            startActivity(n);
+        });
+
+        btnMyRecipes.setOnClickListener(v -> {
+            Intent intent = new Intent(ChefActivity.this, RecipeListActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void showChangePasswordDialog(String userEmail) {
@@ -93,7 +106,6 @@ public class ChefActivity extends AppCompatActivity {
                 return;
             }
 
-            // Persist password update to DB
             user.setPassword(np1);
             userRepository.updateUser(user.getEmail(), user);
 
