@@ -70,7 +70,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 String qrValue = result.getContents();
                 Ingredient ing = db.getIngredientByQRCode(qrValue); // SQLite
                 if (ing != null) {
-                    showQuantityDialog(ing); // on demandera la quantité
+                    showQuantityDialog(ing); // we will ask for the quantity
                 } else {
                     Toast.makeText(this, "Ingrédient inconnu", Toast.LENGTH_SHORT).show();
                 }
@@ -82,7 +82,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
             String desc = etDescription.getText().toString().trim();
 
             if (name.isEmpty()) {
-                Toast.makeText(this, "Le nom est obligatoire", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "The name is mandatory", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -95,10 +95,10 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 for (RecipeIngredient ri : ingredientList) {
                     db.addIngredientToRecipe((int) currentRecipeId, ri.getIngredientId(), ri.getQuantity());
                 }
-                Toast.makeText(this, "Recette créée avec ingrédients ✅", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Recipe created with ingredients ✅", Toast.LENGTH_SHORT).show();
                 finish();
             } else {
-                Toast.makeText(this, "⚠️ Le nom de recette doit être unique", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "⚠ The recipe name must be unique.", Toast.LENGTH_LONG).show();
             }
         });
 
@@ -107,17 +107,17 @@ public class CreateRecipeActivity extends AppCompatActivity {
 
     private void showQuantityDialog(Ingredient ingredient) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Quantité (%) pour " + ingredient.getName());
+        builder.setTitle("Quantity (%) for " + ingredient.getName());
 
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        input.setHint("Ex: 20 pour 20%");
+        input.setHint("Ex: 20  for 20%");
         builder.setView(input);
 
-        builder.setPositiveButton("Ajouter", (dialog, which) -> {
+        builder.setPositiveButton("Add", (dialog, which) -> {
             String text = input.getText().toString();
             if (text.isEmpty()) {
-                Toast.makeText(this, "Veuillez entrer une quantité", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please enter a quantity", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -134,13 +134,13 @@ public class CreateRecipeActivity extends AppCompatActivity {
             adapter.notifyItemInserted(ingredientList.size() - 1);
         });
 
-        builder.setNegativeButton("Annuler", (d, w) -> d.dismiss());
+        builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
         builder.show();
     }
 
     private void ScanCode() {
         ScanOptions options = new ScanOptions();
-        options.setPrompt("Scanner le QR Code");
+        options.setPrompt("Scan the QR Code");
         options.setBeepEnabled(true);
         options.setOrientationLocked(true);
         options.setCaptureActivity(CaptureAct.class);

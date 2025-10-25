@@ -1,25 +1,23 @@
 package com.example.utaste.data;
 
-// Dans com.example.utaste.data.RecipeIngredient
-
 public class RecipeIngredient {
-    private int ingredientId; // NOUVEAU : ID BDD de l'ingrédient
+    private int ingredientId; // NEW: Ingredient database ID
     private String name;
-    private double quantity; // Le champ pour la quantité (%)
+    private double quantity; // The field for quantity (%)
 
-    // Constructeur mis à jour pour inclure l'ID (optionnel, mais propre)
+    // Builder updated to include ID (optional, but clean)
     public RecipeIngredient(int ingredientId, String name, double quantity) {
         this.ingredientId = ingredientId;
         this.name = name;
         this.quantity = quantity;
     }
 
-    // NOUVEAU GETTER POUR L'ID (CRUCIAL POUR LA SAUVEGARDE)
+    // NEW GETTER FOR ID (CRUCIAL FOR BACKUP)
     public int getIngredientId() {
         return ingredientId;
     }
 
-    // GETTER POUR LA QUANTITÉ (CELUI DONT VOUS AVEZ BESOIN)
+    // GETTER FOR QUANTITY (THE ONE YOU NEED)
     public double getQuantity() {
         return quantity;
     }
@@ -28,5 +26,5 @@ public class RecipeIngredient {
         return name;
     }
 
-    // ... autres getters (getName, etc.)
+    // ... other getters (getName, etc.)
 }

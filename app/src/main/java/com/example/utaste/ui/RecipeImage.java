@@ -14,7 +14,7 @@ public class RecipeImage {
 
     @Override
     public String toString() {
-        return name; // important pour l'affichage par défaut
+        return name; // important for default display
     }
 }
 
