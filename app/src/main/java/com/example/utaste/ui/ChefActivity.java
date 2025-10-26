@@ -55,8 +55,8 @@ public class ChefActivity extends AppCompatActivity {
         });
 
         btnMyRecipes.setOnClickListener(v -> {
-            Intent intent = new Intent(ChefActivity.this, RecipeListActivity.class);
-            startActivity(intent);
+            Intent t = new Intent(ChefActivity.this, RecipeListActivity.class);
+            startActivity(t);
         });
     }
 

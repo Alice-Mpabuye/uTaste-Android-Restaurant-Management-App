@@ -6,54 +6,57 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
-
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.utaste.R;
 import com.example.utaste.data.Ingredient;
+import com.example.utaste.data.Recipe;
 import com.example.utaste.data.RecipeIngredient;
+import com.example.utaste.data.RecipeRepository;
 import com.example.utaste.data.UserDbHelper;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class CreateRecipeActivity extends AppCompatActivity {
 
-
     private EditText etName, etDescription;
     private Spinner spinnerImage;
-    private Button btnSave, btnScanIngredient;
+    private Button btnSave, btnScanIngredient, btnGoToChefFromCreate;
     private ActivityResultLauncher<ScanOptions> barLauncher;
-    private UserDbHelper db;
+    private UserDbHelper dbHelper; // For ingredient scanning only
+    private RecipeRepository recipeRepository;
 
     private RecyclerView rvIngredients;
     private List<RecipeIngredient> ingredientList;
     private IngredientAdapter adapter;
 
     private long currentRecipeId = -1;
+    private boolean isEditMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_recipe);
 
-        db = new UserDbHelper(this);
+        dbHelper = new UserDbHelper(this); // Kept for getIngredientByQRCode
+        recipeRepository = RecipeRepository.getInstance();
+
         etName = findViewById(R.id.etRecipeName);
         etDescription = findViewById(R.id.etRecipeDescription);
         spinnerImage = findViewById(R.id.spinnerRecipeImage);
 
         btnSave = findViewById(R.id.btnSaveRecipe);
         btnScanIngredient = findViewById(R.id.btnScanIngredient);
+        btnGoToChefFromCreate = findViewById(R.id.btnGoToChefFromCreate);
 
         rvIngredients = findViewById(R.id.rvIngredients);
         ingredientList = new ArrayList<>();
-        adapter = new IngredientAdapter(ingredientList);
+        adapter = new IngredientAdapter(ingredientList, null); // Listener is not needed here
         rvIngredients.setLayoutManager(new LinearLayoutManager(this));
         rvIngredients.setAdapter(adapter);
 
@@ -65,44 +68,67 @@ public class CreateRecipeActivity extends AppCompatActivity {
         RecipeImageAdapter adapter_ = new RecipeImageAdapter(this, imageList);
         spinnerImage.setAdapter(adapter_);
 
+        if (getIntent().hasExtra("RECIPE_ID")) {
+            isEditMode = true;
+            currentRecipeId = getIntent().getIntExtra("RECIPE_ID", -1);
+            loadRecipeData();
+            btnSave.setText("Update Recipe");
+        }
+
         barLauncher = registerForActivityResult(new ScanContract(), result -> {
             if (result.getContents() != null) {
                 String qrValue = result.getContents();
-                Ingredient ing = db.getIngredientByQRCode(qrValue); // SQLite
+                Ingredient ing = dbHelper.getIngredientByQRCode(qrValue);
                 if (ing != null) {
-                    showQuantityDialog(ing); // we will ask for the quantity
+                    showQuantityDialog(ing);
                 } else {
-                    Toast.makeText(this, "Ingrédient inconnu", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Ingredient not found", Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
-        btnSave.setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            String desc = etDescription.getText().toString().trim();
-
-            if (name.isEmpty()) {
-                Toast.makeText(this, "The name is mandatory", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            RecipeImage selected = (RecipeImage) spinnerImage.getSelectedItem();
-            String imageName = getResources().getResourceEntryName(selected.getResId());
-
-            currentRecipeId = db.createRecipe(name, desc, imageName);
-
-            if (currentRecipeId == -1) {
-                for (RecipeIngredient ri : ingredientList) {
-                    db.addIngredientToRecipe((int) currentRecipeId, ri.getIngredientId(), ri.getQuantity());
-                }
-                Toast.makeText(this, "Recipe created with ingredients ✅", Toast.LENGTH_SHORT).show();
-                finish();
-            } else {
-                Toast.makeText(this, "⚠ The recipe name must be unique.", Toast.LENGTH_LONG).show();
-            }
-        });
-
+        btnSave.setOnClickListener(v -> saveOrUpdateRecipe());
         btnScanIngredient.setOnClickListener(v -> ScanCode());
+        btnGoToChefFromCreate.setOnClickListener(v -> finish());
+    }
+
+    private void loadRecipeData() {
+        Recipe recipe = recipeRepository.getRecipeById((int) currentRecipeId);
+        if (recipe != null) {
+            etName.setText(recipe.getName());
+            etDescription.setText(recipe.getDescription());
+            ingredientList.addAll(recipeRepository.getIngredientsForRecipe((int) currentRecipeId));
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    private void saveOrUpdateRecipe() {
+        String name = etName.getText().toString().trim();
+        String desc = etDescription.getText().toString().trim();
+        RecipeImage selected = (RecipeImage) spinnerImage.getSelectedItem();
+        String imageName = getResources().getResourceEntryName(selected.getResId());
+
+        if (name.isEmpty()) {
+            Toast.makeText(this, "Recipe name is required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (isEditMode) {
+            recipeRepository.updateRecipe((int) currentRecipeId, name, desc, imageName);
+            recipeRepository.clearIngredientsForRecipe((int) currentRecipeId);
+        } else {
+            currentRecipeId = recipeRepository.createRecipe(name, desc, imageName);
+        }
+
+        if (currentRecipeId != -1) {
+            for (RecipeIngredient ri : ingredientList) {
+                recipeRepository.addIngredientToRecipe((int) currentRecipeId, ri.getIngredientId(), ri.getQuantity());
+            }
+            Toast.makeText(this, isEditMode ? "Recipe updated ✅" : "Recipe created ✅", Toast.LENGTH_SHORT).show();
+            finish();
+        } else {
+            Toast.makeText(this, "Error: Recipe name might already exist.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void showQuantityDialog(Ingredient ingredient) {
@@ -111,7 +137,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
 
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        input.setHint("Ex: 20  for 20%");
+        input.setHint("Ex: 20 for 20%");
         builder.setView(input);
 
         builder.setPositiveButton("Add", (dialog, which) -> {
@@ -125,7 +151,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
             try {
                 qty = Double.parseDouble(text);
             } catch (NumberFormatException e) {
-                Toast.makeText(this, "Quantité invalide", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Invalid quantity", Toast.LENGTH_SHORT).show();
                 return;
             }
 

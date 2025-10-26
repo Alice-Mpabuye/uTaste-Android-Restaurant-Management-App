@@ -6,23 +6,100 @@
 
 
 package "com.example.utaste.data" {
-    class DbHelper {
+    class Ingredient{
+        - int id
+        - String name
+        - String qrCode
+        + Ingredient(int id, String name, String qrCode)
+        + int getId()
+        + String getName()
+        + String getQrCode()
 
     }
+    class Recipe{
+        - int id
+        - String name
+        - String description
+        - String image
+        + Recipe(int id, String name, String description, String image)
+        + int getId()
+        + String getName()
+        + String getDescription()
+        + String getImage()
+
+    }
+    class RecipIngredient{
+        - int ingredientId
+        - String name
+        - double quantity
+        + RecipIngredient(int ingredientId, String name, double quantity)
+        + int getIngredientId()
+        + double getQuantity()
+        + String getName()
+    }
+
+    class RecipeRepository{
+        - static RecipeRepository instance
+        - final UserDbHelper dbHelper
+        - RecipeRepository(Context context)
+        + static synchronized void init(Context context)
+        + static synchronized RecipeRepository getInstance()
+        + long createRecipe(String name, String description, String imageName)
+        + List<Recipe> listRecipes()
+        + Recipe getRecipeById(int recipeId)
+        + int updateRecipe(int id, String name, String description, String imageName)
+        + void deleteRecipe(int id)
+        + void addIngredientToRecipe(int recipeId, int ingredientId, double quantity)
+        + List<RecipeIngredient> getIngredientsForRecipe(int recipeId)
+        + void clearIngredientsForRecipe(int recipeId)
+    }
+
+    class UserDbHelper {
+        - static final String DATABASE_NAME
+        - static final int DATABASE_VERSION
+        + static final String TABLE_USERS
+        + static final String COL_EMAIL
+        + static final String COL_PASSWORD
+        + static final String COL_FIRST
+        + static final String COL_LAST
+        + static final String COL_ROLE
+        + static final String COL_CREATED 
+        + static final String COL_MODIFIED
+        - static final String SQL_CREATE_USERS
+        - static final String CREATE_TABLE_INGREDIENT
+        - static final String CREATE_TABLE_RECIPE
+        - static final String CREATE_TABLE_RECIPE_INGREDIENT
+        + UserDbHelper(Context context)
+        + void onCreate(SQLiteDatabase db)
+        + void onUpgrade(SQLiteDatabase db, int oldV, int newV)
+        + Ingredient getIngredientByQRCode(String qrCode)
+    }
+
     class UserRepository{
         - static UserRepository instance
         - final Map<String, user> usersByEmail
-        - UserRepository()
-        + static synchronized UserRepository getInstance()
-        + synchronized boolean addUser(user newUser)
-        + synchronized User findByEmail(String email)
-        + synchronized boolean authenticate(String email, String password)
-
-        + synchronized boolean updateUser(String originalEmail, User updated)
-        + synchronized boolean deleteUser(String email)
-        + synchronized List<user> listWaiters()
-        + synchronized List<user> listAllUsers()
+        - final Context context
+        - UserRepository(Context ctx)
+        + static synchronized void init(Context context)
+        + static synchronized UserRepository getInstance() 
+        - void ensureDefaultAccounts()
+        + boolean addUser(User user)
+        + User findByEmail(String email)
+        + boolean authenticate(String email, String password)
+        + boolean updateUser(String originalEmail, User updated)
+        + boolean deleteUser(String email) 
+        + List<User> listWaiters()
+        + List<User> listAllUsers()
+        - boolean insertUserInternal(User user)
+        - boolean insertUserInternal(User user, SQLiteDatabase db)
+        - ContentValues userToContentValues(User u)
+        - User cursorToUser(Cursor c)
+        - User findByEmailInternal(String email)
+        + void resetDatabaseToDefaults()
     }
+    
+    '============ relationships ============
+    UserDbHelper -> SQLiteOpenHelper
 }
 
 
@@ -31,7 +108,7 @@ package "com.example.utaste.data" {
 '=============
 
 package "com.example.utaste.model" {
-    
+
     class user{
         + enum Role { ADMIN, CHEF, WAITER }
         - String email
@@ -93,11 +170,51 @@ package "com.example.utaste.ui" {
     class ChefActivity{
         - Button btnLogout
         - Button btnChangePassword
-        - String currentChefEmail = "chef@local"
+        - Button btnCreateRecipe
+        - Button btnMyRecipes
+        - String currentChefEmail
+        - UserRepository userRepository
 
         # void onCreate(Bundle savedInstanceState)
         - void showChangePasswordDialog(String userEmail)
     }
+    class createRecipeActivity{
+        - EditText etName
+        - EditText etDescription
+        - Spinner spinnerImage
+        - Button btnSave
+        - Button  btnScanIngredient
+        - Button  btnGoToChefFromCreate
+        - ActivityResultLauncher<ScanOptions> barLauncher
+        - UserDbHelper dbHelper
+        - RecipeRepository recipeRepository
+        - RecyclerView rvIngredients
+        - List<RecipeIngredient> ingredientList
+        - IngredientAdapter adapter
+        - long currentRecipeId
+        - boolean isEditMode
+
+        # void onCreate(Bundle savedInstanceState)
+        - void loadRecipeData()
+        - void saveOrUpdateRecipe()
+        - void showQuantityDialog(Ingredient ingredient)
+        - void ScanCode()
+    }
+
+    class IngredientAdapter{
+        - List<RecipeIngredient> ingredients
+        + IngredientAdapter(List<RecipeIngredient> ingredients, Object o)
+        + ViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
+        + void onBindViewHolder(ViewHolder holder, int position)
+        + int getItemCount()
+        + static class ViewHolder{
+            + TextView tvName
+            + TextView tvQty
+            + ViewHolder(View itemView)
+        
+    }
+    }
+    
 
     class LoginActivity{
         - EditText emailField

@@ -21,6 +21,7 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@color/pink_40"
         android:textColor="@color/white"/>
+
     <Button
         android:id="@+id/btnMyRecipes"
         android:text="My Recipes"
@@ -46,4 +47,5 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@color/pink_40"
         android:textColor="@color/white"/>
+
 </LinearLayout>

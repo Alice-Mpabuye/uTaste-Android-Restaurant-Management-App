@@ -13,5 +13,6 @@ public class Ingredient {
 
     public int getId() {return  id;}
     public String getName() { return name;}
-    public String getQrCode(){return qrCode;}
+    public String getQrCode() { return qrCode; }
+    
 }

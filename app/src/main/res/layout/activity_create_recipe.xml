@@ -21,7 +21,7 @@
         <EditText
             android:id="@+id/etRecipeDescription"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="68dp"
             android:layout_marginTop="8dp"
             android:gravity="top"
             android:hint="Description"
@@ -66,6 +66,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="SAVE" />
+
+        <Button
+            android:id="@+id/btnGoToChefFromCreate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Back to Chef menu" />
 
     </LinearLayout>
 </ScrollView>

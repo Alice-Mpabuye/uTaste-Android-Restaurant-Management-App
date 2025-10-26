@@ -1,34 +1,99 @@
 package com.example.utaste.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.utaste.R;
 import com.example.utaste.data.Recipe;
-import com.example.utaste.data.UserDbHelper;
-
+import com.example.utaste.data.RecipeIngredient;
+import com.example.utaste.data.RecipeRepository;
 import java.util.List;
 
-public class RecipeListActivity extends AppCompatActivity {
+public class RecipeListActivity extends AppCompatActivity implements RecipeAdapter.OnRecipeClickListener {
 
     private RecyclerView recyclerView;
-    private UserDbHelper dbHelper;
+    private TextView textViewEmpty;
+    private Button btnAddRecipe, btnGoToChef;
+    private RecipeRepository recipeRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_list);
 
-        dbHelper = new UserDbHelper(this);
+        recipeRepository = RecipeRepository.getInstance();
+
         recyclerView = findViewById(R.id.recyclerViewRecipes);
+        textViewEmpty = findViewById(R.id.textViewEmpty);
+        btnAddRecipe = findViewById(R.id.btnAddRecipe);
+        btnGoToChef = findViewById(R.id.btnGoToChef);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        List<Recipe> recipeList = dbHelper.getAllRecipes();
+        btnAddRecipe.setOnClickListener(v -> {
+            Intent intent = new Intent(RecipeListActivity.this, CreateRecipeActivity.class);
+            startActivity(intent);
+        });
 
-        // We will create this adapter in the next step
-        RecipeAdapter adapter = new RecipeAdapter(recipeList);
-        recyclerView.setAdapter(adapter);
+        btnGoToChef.setOnClickListener(v -> finish());
+
+        updateRecipeList();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateRecipeList();
+    }
+
+    private void updateRecipeList() {
+        List<Recipe> recipeList = recipeRepository.listRecipes();
+
+        if (recipeList == null || recipeList.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            textViewEmpty.setVisibility(View.VISIBLE);
+            btnAddRecipe.setVisibility(View.VISIBLE);
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            textViewEmpty.setVisibility(View.GONE);
+            btnAddRecipe.setVisibility(View.GONE);
+            RecipeAdapter adapter = new RecipeAdapter(recipeList, this);
+            recyclerView.setAdapter(adapter);
+        }
+    }
+
+    @Override
+    public void onRecipeClick(Recipe recipe) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_recipe_detail, null);
+        builder.setView(dialogView);
+
+        ImageView recipeImage = dialogView.findViewById(R.id.dialog_recipe_image);
+        RecyclerView ingredientsRecyclerView = dialogView.findViewById(R.id.dialog_ingredients_recyclerview);
+
+        builder.setTitle(recipe.getName());
+
+        int imageResId = getResources().getIdentifier(recipe.getImage(), "drawable", getPackageName());
+        if (imageResId != 0) {
+            recipeImage.setImageResource(imageResId);
+        }
+
+        List<RecipeIngredient> ingredients = recipeRepository.getIngredientsForRecipe(recipe.getId());
+        IngredientDetailAdapter adapter = new IngredientDetailAdapter(ingredients);
+        ingredientsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        ingredientsRecyclerView.setAdapter(adapter);
+
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }
