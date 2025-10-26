@@ -1,0 +1,340 @@
+@startuml
+
+'============
+'data classes
+'============
+
+package "com.example.utaste.data" {
+
+    class Ingredient {
+        - id: int
+        - name: String
+        - qrCode: String
+        + Ingredient(id: int, name: String, qrCode: String)
+        + getId(): int
+        + getName(): String
+        + getQrCode(): String
+    }
+
+    class Recipe {
+        - id: int
+        - name: String
+        - description: String
+        - image: String
+        + Recipe(id: int, name: String, description: String, image: String)
+        + getId(): int
+        + getName(): String
+        + getDescription(): String
+        + getImage(): String
+    }
+
+    class RecipeIngredient {
+        - ingredientId: int
+        - name: String
+        - quantity: double
+        + RecipeIngredient(ingredientId: int, name: String, quantity: double)
+        + getIngredientId(): int
+        + getName(): String
+        + getQuantity(): double
+    }
+
+    class RecipeRepository {
+        - static instance: RecipeRepository
+        - dbHelper: UserDbHelper
+        - RecipeRepository(context: Context)
+        + static synchronized init(context: Context): void
+        + static synchronized getInstance(): RecipeRepository
+        + createRecipe(name: String, description: String, imageName: String): long
+        + listRecipes(): List<Recipe>
+        + getRecipeById(recipeId: int): Recipe
+        + updateRecipe(id: int, name: String, description: String, imageName: String): int
+        + deleteRecipe(id: int): void
+        + addIngredientToRecipe(recipeId: int, ingredientId: int, quantity: double): void
+        + getIngredientsForRecipe(recipeId: int): List<RecipeIngredient>
+        + clearIngredientsForRecipe(recipeId: int): void
+    }
+
+    class UserDbHelper {
+        + UserDbHelper(context: Context)
+        + onCreate(db: SQLiteDatabase): void
+        + onUpgrade(db: SQLiteDatabase, oldV: int, newV: int): void
+        + getIngredientByQRCode(qrCode: String): Ingredient
+        + getIngredientByName(name: String): Ingredient
+        + addIngredientToRecipe(recipeId: int, ingredientId: int, quantity: double): void
+        + getAllRecipes(): List<Recipe>
+        + createRecipe(name: String, description: String, imageName: String): long
+        + resetDatabase(): void
+        + resetUserPassword(email: String): boolean
+    }
+
+    class UserRepository {
+        - static instance: UserRepository
+        - usersByEmail: Map<String, User>
+        - context: Context
+        - UserRepository(ctx: Context)
+        + static synchronized init(context: Context): void
+        + static synchronized getInstance(): UserRepository
+        - ensureDefaultAccounts(): void
+        + addUser(user: User): boolean
+        + findByEmail(email: String): User
+        + authenticate(email: String, password: String): boolean
+        + updateUser(originalEmail: String, updated: User): boolean
+        + deleteUser(email: String): boolean
+        + listWaiters(): List<User>
+        + listAllUsers(): List<User>
+        - insertUserInternal(user: User): boolean
+        - insertUserInternal(user: User, db: SQLiteDatabase): boolean
+        - userToContentValues(u: User): ContentValues
+        - cursorToUser(c: Cursor): User
+        - findByEmailInternal(email: String): User
+        + resetDatabaseToDefaults(): void
+    }
+
+    '============ relationships ============
+    UserDbHelper -|> SQLiteOpenHelper
+    RecipeRepository --> UserDbHelper
+    RecipeRepository --> Recipe
+    RecipeRepository --> RecipeIngredient
+    UserRepository --> User
+}
+
+
+'=============
+'model classes
+'=============
+
+package "com.example.utaste.model" {
+
+    class user{
+        + enum Role { ADMIN, CHEF, WAITER }
+        - String email
+        - String password
+        - String firstName
+        - String lastName
+        - Role role
+        - long createdAt
+        - long modifiedAt
+        + user(String email, String password, Role role)
+    
+        + String getEmail()
+        + void setEmail(String email)
+        + String getPassword()
+        + void setPassword(String password)
+        + String getFirstName()
+        + void setFirstName(String firstName)
+        + String getLastName()
+        + void setLastName(String lastName)
+        + Role getRole()
+        + void setRole(Role role)
+        + long getCreatedAt()
+        + void setCreatedAt(long createdAt)
+        + long getModifiedAt()
+        + void setModifiedAt(long modifiedAt)
+        + void touchModified()
+        + String toString()
+    }
+}
+
+
+'============
+'UI classes
+'============
+
+package "com.example.utaste.ui" {
+
+    class AdminActivity {
+        - Button btnCreateWaiter
+        - Button btnResetDB
+        - Button btnManageProfiles
+        - Button btnLogout
+        - Button btnChangePassword
+        - Button btnResetSelfPassword
+
+        - ListView waiterListView
+        - ArrayAdapter<String> adapter
+        - String currentAdminEmail
+        - SimpleDateFormat dateFormat
+        - ExecutorService executor
+
+        # void onCreate(Bundle savedInstanceState)
+        - void refreshWaiterList()
+        - void showCreateWaiterDialog()
+        - void showWaiterOptionsDialog(User waiter)
+        - void confirmAndDeleteWaiter(User waiter)
+        - void showEditWaiterDialog(User waiter)
+        - void showChangePasswordDialog(String userEmail) 
+        - void confirmResetSelfPassword()
+        - void performResetSelfPassword()
+        - void confirmResetUserPassword(User user)
+        - void confirmDatabaseReset()
+        - void performDatabaseReset()
+        # void onDestroy()
+    }
+
+    class CaptureAct {}
+
+    class ChefActivity {
+        - Button btnLogout
+        - Button btnChangePassword
+        - Button btnCreateRecipe
+        - Button btnMyRecipes
+        - String currentChefEmail
+        - UserRepository userRepository
+
+        # void onCreate(Bundle savedInstanceState)
+        - void showChangePasswordDialog(String userEmail)
+    }
+
+    class CreateRecipeActivity {
+        - EditText etName
+        - EditText etDescription
+        - Spinner spinnerImage
+        - Button btnSave
+        - Button btnScanIngredient
+        - Button btnGoToChefFromCreate
+        - ActivityResultLauncher<ScanOptions> barLauncher
+        - UserDbHelper dbHelper
+        - RecipeRepository recipeRepository
+        - RecyclerView rvIngredients
+        - List<RecipeIngredient> ingredientList
+        - IngredientAdapter adapter
+        - long currentRecipeId
+        - boolean isEditMode
+
+        # void onCreate(Bundle savedInstanceState)
+        - void loadRecipeData()
+        - void saveOrUpdateRecipe()
+        - void showQuantityDialog(Ingredient ingredient)
+        - void scanCode()  
+    }
+
+    class IngredientAdapter {
+        - List<RecipeIngredient> ingredients
+        + IngredientAdapter(List<RecipeIngredient> ingredients, Object o)
+        + ViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
+        + void onBindViewHolder(ViewHolder holder, int position)
+        + int getItemCount()
+        + void addIngredient(RecipeIngredient ing)
+    }
+
+    class IngredientDetailAdapter {
+        - final List<RecipeIngredient> ingredients
+        + IngredientDetailAdapter(List<RecipeIngredient> ingredients)
+        + ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+        + void onBindViewHolder(@NonNull ViewHolder holder, int position)
+        + int getItemCount()
+    }
+
+    class ViewHolder {
+        + TextView text1
+        + TextView text2
+        + ViewHolder(View itemView)
+    }
+
+    class LoginActivity {
+        - EditText emailField
+        - EditText passField
+        - TextView errorText
+        - ExecutorService executor
+
+        # void onCreate(Bundle savedInstanceState)
+        - void showError(String msg)
+        - void navigateToRoleHome(User u)
+        # void onDestroy()
+    }
+
+    class MainActivity {
+        # void onCreate(Bundle savedInstanceState)
+    }
+
+    class RecipeAdapter {
+        - List<Recipe> recipeList
+        - OnRecipeClickListener listener
+        + interface OnRecipeClickListener
+        + RecipeAdapter(List<Recipe> recipeList, OnRecipeClickListener listener)
+        + RecipeViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
+        + void onBindViewHolder(RecipeViewHolder holder, int position)
+        + int getItemCount()
+    }
+
+    class RecipeViewHolder {
+        + RecipeViewHolder(View itemView)
+    }
+
+    class RecipeImage {
+        - String name
+        - int resId
+        + RecipeImage(String name, int resId)
+        + String getName()
+        + int getResId()
+        + String toString()
+    }
+
+    class RecipeImageAdapter {
+        + RecipeImageAdapter(Context context, List<RecipeImage> images)
+        + View getView(int position, View convertView, ViewGroup parent)
+        + View getDropDownView(int position, View convertView, ViewGroup parent)
+        - View inflateRow(int position, View convertView, ViewGroup parent)
+    }
+
+    class RecipeListActivity {
+        - RecyclerView recyclerView
+        - TextView textViewEmpty
+        - Button btnAddRecipe
+        - Button btnGoToChef
+        - RecipeRepository recipeRepository
+
+        # void onCreate(Bundle savedInstanceState)
+        # void onResume()
+        - void updateRecipeList()
+        + void onRecipeClick(Recipe recipe)
+    }
+
+    class WaiterActivity {
+        - Button btnLogout
+        - Button btnChangePassword
+        - String currentWaiterEmail
+        - UserRepository userRepository
+
+        # void onCreate(Bundle savedInstanceState)
+        - void showChangePasswordDialog(String userEmail)
+    }
+
+    class WelcomeActivity {
+        # void onCreate(Bundle savedInstanceState)
+    }
+
+    '============ relationships ============
+
+    AdminActivity --> AppCompatActivity : extends
+    CaptureAct --> CaptureActivity : extends
+    ChefActivity --> AppCompatActivity : extends
+    CreateRecipeActivity --> AppCompatActivity : extends
+
+    LoginActivity --> AppCompatActivity : extends
+    RecipeImageAdapter --> ArrayAdapter : extends
+    RecipeImageAdapter --> ArrayAdapter : extends
+
+    RecipeListActivity --> AppCompatActivity : extends
+    
+    WaiterActivity --> AppCompatActivity : extends
+    WelcomeActivity --> AppCompatActivity : extends
+    MainActivity --> AppCompatActivity : extends
+
+    IngredientAdapter --> RecipeIngredient: uses
+    IngredientAdapter --> ViewHolder : uses
+    ViewHolder --> TextView
+}
+
+
+'=============
+'utility classes
+'=============
+
+package "com.example.utaste.util" {
+    class Validators{
+        + static String validateLoginFields(String email, String password)
+        + static String validateNewUser(String email, String password)
+    }
+}
+@enduml
