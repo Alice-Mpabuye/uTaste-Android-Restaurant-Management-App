@@ -148,4 +148,7 @@ public class UserDbHelper extends SQLiteOpenHelper {
         cursor.close();
         return null;
     }
+
+    // removes all ingredients, recipes and users (except for admin)
+
 }

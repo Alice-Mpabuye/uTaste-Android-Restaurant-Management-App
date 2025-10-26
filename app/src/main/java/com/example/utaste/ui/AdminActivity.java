@@ -40,6 +40,7 @@ public class AdminActivity extends AppCompatActivity {
         btnManageProfiles = findViewById(R.id.btnManageProfiles);
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        //btnResetPassword = findViewById(R.id.btnResetPassword);
         waiterListView = findViewById(R.id.waiterListView);
 
         // Setup list adapter

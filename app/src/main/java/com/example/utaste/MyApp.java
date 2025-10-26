@@ -8,6 +8,6 @@ public class MyApp extends Application {
     public void onCreate() {
         super.onCreate();
         // Initialise le repository SQLite au démarrage de l'application
-        UserRepository.init(this);
+        UserRepository.init(getApplicationContext());
     }
 }
