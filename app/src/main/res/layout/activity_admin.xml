@@ -29,8 +29,8 @@
         android:backgroundTint="@color/purple_grey_40"
         android:textColor="@color/white"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:enabled="false"/>
+        android:layout_height="wrap_content"/>
+    <!-- J'ai enlever le enable button -->
 
     <Button
         android:id="@+id/btnManageProfiles"
@@ -44,6 +44,13 @@
     <Button
         android:id="@+id/btnChangePassword"
         android:text="Change Password"
+        android:backgroundTint="@color/pink_40"
+        android:textColor="@color/white"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <Button
+        android:id="@+id/btnResetSelfPassword"
+        android:text="Reset Password"
         android:backgroundTint="@color/pink_40"
         android:textColor="@color/white"
         android:layout_width="match_parent"

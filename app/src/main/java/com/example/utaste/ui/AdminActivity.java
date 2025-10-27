@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 
 public class AdminActivity extends AppCompatActivity {
 
-    private Button btnCreateWaiter, btnResetDB, btnManageProfiles, btnLogout, btnChangePassword;
+    private Button btnCreateWaiter, btnResetDB, btnManageProfiles, btnLogout, btnChangePassword, btnResetSelfPassword;
     private ListView waiterListView;
     private ArrayAdapter<String> adapter;
     private String currentAdminEmail = "admin@local"; // hardcoded for demo
@@ -40,7 +40,7 @@ public class AdminActivity extends AppCompatActivity {
         btnManageProfiles = findViewById(R.id.btnManageProfiles);
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
-        //btnResetPassword = findViewById(R.id.btnResetPassword);
+        btnResetSelfPassword = findViewById(R.id.btnResetSelfPassword);
         waiterListView = findViewById(R.id.waiterListView);
 
         // Setup list adapter
@@ -55,9 +55,11 @@ public class AdminActivity extends AppCompatActivity {
             finish();
         });
 
+        btnResetDB.setOnClickListener(v -> confirmDatabaseReset()); // Quand l'admin clique le bouton ca va appeler la methode
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog(currentAdminEmail));
-
+        btnResetSelfPassword.setOnClickListener(v -> confirmResetSelfPassword());
         waiterListView.setOnItemClickListener((parent, view, position, id) -> {
+
             // Access list on background thread to ensure consistency
             executor.execute(() -> {
                 List<User> waiters = UserRepository.getInstance().listWaiters();
@@ -156,12 +158,13 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void showWaiterOptionsDialog(User waiter) {
-        CharSequence[] options = {"Edit", "Delete", "Cancel"};
+        CharSequence[] options = {"Edit", "Delete", "Reset password","Cancel"};
         new AlertDialog.Builder(this)
                 .setTitle(waiter.getEmail())
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) showEditWaiterDialog(waiter);
                     else if (which == 1) confirmAndDeleteWaiter(waiter);
+                    else if (which == 2) confirmResetUserPassword(waiter);
                     else dialog.dismiss();
                 })
                 .show();
@@ -332,6 +335,94 @@ public class AdminActivity extends AppCompatActivity {
                     });
                 });
             });
+        });
+    }
+
+    private void confirmResetSelfPassword() {
+        new AlertDialog.Builder(this)
+                .setTitle("Reset my password")
+                .setMessage("This will reset your password to the default.\n\n" +
+                        "You will need to re-login after this. Proceed?")
+                .setPositiveButton("Reset", (dialog, which) -> executor.execute(this::performResetSelfPassword))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void performResetSelfPassword() {
+        boolean success = false;
+        try {
+            // Uses repository method that resets password based on role
+            success = UserRepository.getInstance().resetUserPassword(currentAdminEmail);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        boolean finalSuccess = success;
+        runOnUiThread(() -> {
+            if (finalSuccess) {
+                Toast.makeText(this, "Your password was reset to your default password. You will be logged out.", Toast.LENGTH_LONG).show();
+                // Optionally force logout so admin can re-login with new password
+                Intent i = new Intent(AdminActivity.this, LoginActivity.class);
+                startActivity(i);
+                finish();
+            } else {
+                Toast.makeText(this, "Failed to reset your password.", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+    private void confirmResetUserPassword(User user) {
+        new AlertDialog.Builder(this)
+                .setTitle("Reset Password")
+                .setMessage("Reset password for " + user.getEmail() + "?\n\nThe new password will depend on their role.")
+                .setPositiveButton("Reset", (dialog, which) -> executor.execute(() -> {
+                    boolean success = UserRepository.getInstance().resetUserPassword(user.getEmail());
+                    runOnUiThread(() -> {
+                        if (success) {
+                            String newPwd;
+                            switch (user.getRole()) {
+                                case ADMIN: newPwd = "admin-pwd"; break;
+                                case CHEF: newPwd = "chef-pwd"; break;
+                                default: newPwd = "waiter-pwd"; break;
+                            }
+                            Toast.makeText(this,
+                                    "Password reset successfully!\nNew password: " + newPwd,
+                                    Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(this, "Password reset failed.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void confirmDatabaseReset() {
+        new AlertDialog.Builder(this)
+                .setTitle("Reset Database")
+                .setMessage("This will delete all recipes, ingredients, and waiters.\n\nProceed?")
+                .setPositiveButton("Reset", (dialog, which) -> executor.execute(this::performDatabaseReset))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void performDatabaseReset() {
+        boolean success = false;
+        try {
+            UserRepository.getInstance().resetDatabase();
+            success = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        boolean finalSuccess = success;
+        runOnUiThread(() -> {
+            if (finalSuccess) {
+                Toast.makeText(this, "Database reset successfully.", Toast.LENGTH_SHORT).show();
+                refreshWaiterList();
+            } else {
+                Toast.makeText(this, "Database reset failed.", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 

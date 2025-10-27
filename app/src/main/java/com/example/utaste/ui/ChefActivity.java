@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -17,11 +16,15 @@ import com.example.utaste.R;
 import com.example.utaste.data.UserRepository;
 import com.example.utaste.model.User;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class ChefActivity extends AppCompatActivity {
 
-    private Button btnLogout, btnChangePassword, btnCreateRecipe, btnMyRecipes;
+    private Button btnLogout, btnChangePassword, btnCreateRecipe, btnMyRecipes, btnResetSelfPassword;
     private String currentChefEmail = "chef@local";
     private UserRepository userRepository;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -34,6 +37,7 @@ public class ChefActivity extends AppCompatActivity {
 
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        btnResetSelfPassword = findViewById(R.id.btnResetSelfPassword);
         btnCreateRecipe = findViewById(R.id.btnCreateRecipe);
         btnMyRecipes = findViewById(R.id.btnMyRecipes);
 
@@ -48,6 +52,7 @@ public class ChefActivity extends AppCompatActivity {
         });
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog(currentChefEmail));
+        btnResetSelfPassword.setOnClickListener(v -> confirmResetSelfPassword());
 
         btnCreateRecipe.setOnClickListener(v -> {
             Intent n = new Intent(ChefActivity.this, CreateRecipeActivity.class);
@@ -55,8 +60,8 @@ public class ChefActivity extends AppCompatActivity {
         });
 
         btnMyRecipes.setOnClickListener(v -> {
-            Intent t = new Intent(ChefActivity.this, RecipeListActivity.class);
-            startActivity(t);
+            Intent intent = new Intent(ChefActivity.this, RecipeListActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -113,5 +118,35 @@ public class ChefActivity extends AppCompatActivity {
         });
         builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
         builder.show();
+    }
+
+    private void confirmResetSelfPassword() {
+        new AlertDialog.Builder(this)
+                .setTitle("Reset my password")
+                .setMessage("This will reset your password to the default.\n\nYou will need to re-login after this. Proceed?")
+                .setPositiveButton("Reset", (dialog, which) -> executor.execute(this::performResetSelfPassword))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void performResetSelfPassword() {
+        boolean success = false;
+        try {
+            success = UserRepository.getInstance().resetUserPassword(currentChefEmail);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        boolean finalSuccess = success;
+        runOnUiThread(() -> {
+            if (finalSuccess) {
+                Toast.makeText(this, "Your password was reset to your default password. You will be logged out.", Toast.LENGTH_LONG).show();
+                Intent i = new Intent(ChefActivity.this, LoginActivity.class);
+                startActivity(i);
+                finish();
+            } else {
+                Toast.makeText(this, "Failed to reset your password.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

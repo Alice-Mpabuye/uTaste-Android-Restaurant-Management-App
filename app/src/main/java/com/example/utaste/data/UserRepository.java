@@ -218,25 +218,30 @@ public class UserRepository {
         }
     }
 
-    // For admin reset DB: delete all waiters, recipes, sales, etc.
-    // For now implement user-only reset (deliverable 2 will extend this).
-    public void resetDatabaseToDefaults() {
+    // réinitialisé la base de donnée
+    public void resetDatabase() {
         Executors.newSingleThreadExecutor().execute(() -> {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.beginTransaction();
             try {
-                db.delete(UserDbHelper.TABLE_USERS, null, null);
-                // recreate default accounts:
-                User admin = new User("admin@local", "admin-pwd", User.Role.ADMIN);
-                admin.setFirstName("System"); admin.setLastName("Admin");
-                insertUserInternal(admin, db);
-                User chef = new User("chef@local", "chef-pwd", User.Role.CHEF);
-                chef.setFirstName("Head"); chef.setLastName("Chef");
-                insertUserInternal(chef, db);
+                db.execSQL("DELETE FROM users WHERE role = 'WAITER'");
+                db.execSQL("DELETE FROM recipe_ingredient");
+                db.execSQL("DELETE FROM recipe");
+                db.execSQL("DELETE FROM Ingredient");
+
+
                 db.setTransactionSuccessful();
+            } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 db.endTransaction();
             }
         });
     }
+
+    public boolean resetUserPassword(String email) {
+        return dbHelper.resetUserPassword(email);
+    }
+
+
 }

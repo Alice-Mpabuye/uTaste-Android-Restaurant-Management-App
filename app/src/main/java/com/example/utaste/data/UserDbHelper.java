@@ -6,12 +6,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-public class UserDbHelper extends SQLiteOpenHelper {
+import java.util.ArrayList;
+import java.util.List;
 
+public class UserDbHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "utaste.db";
     private static final int DATABASE_VERSION = 1;
 
-    // ... (User table definitions are unchanged)
     public static final String TABLE_USERS = "users";
     public static final String COL_EMAIL = "email";
     public static final String COL_PASSWORD = "password";
@@ -20,15 +21,24 @@ public class UserDbHelper extends SQLiteOpenHelper {
     public static final String COL_ROLE = "role";
     public static final String COL_CREATED = "createdAt";
     public static final String COL_MODIFIED = "modifiedAt";
-    private static final String SQL_CREATE_USERS = "CREATE TABLE " + TABLE_USERS + " (" + COL_EMAIL + " TEXT PRIMARY KEY, " + COL_PASSWORD + " TEXT NOT NULL, " + COL_FIRST + " TEXT, " + COL_LAST + " TEXT, " + COL_ROLE + " TEXT NOT NULL, " + COL_CREATED + " INTEGER NOT NULL, " + COL_MODIFIED + " INTEGER NOT NULL" + ");";
 
+    private static final String SQL_CREATE_USERS =
+            "CREATE TABLE " + TABLE_USERS + " (" +
+                    COL_EMAIL + " TEXT PRIMARY KEY, " +
+                    COL_PASSWORD + " TEXT NOT NULL, " +
+                    COL_FIRST + " TEXT, " +
+                    COL_LAST + " TEXT, " +
+                    COL_ROLE + " TEXT NOT NULL, " +
+                    COL_CREATED + " INTEGER NOT NULL, " +
+                    COL_MODIFIED + " INTEGER NOT NULL" +
+                    ");";
 
-    private static final String CREATE_TABLE_INGREDIENT=
+    private static final String CREATE_TABLE_INGREDIENT =
             "CREATE TABLE Ingredient (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "name TEXT NOT NULL," +
-            "qrCode TEXT UNIQUE NOT NULL" +
-            ");";
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "name TEXT NOT NULL," +
+                    "qrCode TEXT UNIQUE NOT NULL" +
+                    ");";
 
     private static final String CREATE_TABLE_RECIPE =
             "CREATE TABLE recipe (" +
@@ -74,9 +84,9 @@ public class UserDbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // --- Only ingredient-specific methods remain ---
+    // =============== Ingredient Methods ===============
 
-    public Ingredient getIngredientByQRCode(String qrCode){
+    public Ingredient getIngredientByQRCode(String qrCode) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT id, name FROM Ingredient WHERE qrCode = ?", new String[]{qrCode});
 
@@ -91,5 +101,110 @@ public class UserDbHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return null;
+    }
+
+    public Ingredient getIngredientByName(String name) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT id, qrCode FROM Ingredient WHERE name = ?", new String[]{name});
+        if (cursor.moveToFirst()) {
+            Ingredient ing = new Ingredient(cursor.getInt(0), name, cursor.getString(1));
+            cursor.close();
+            return ing;
+        }
+        cursor.close();
+        return null;
+    }
+
+    public void addIngredientToRecipe(int recipeId, int ingredientId, double quantity) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("recipe_id", recipeId);
+        values.put("ingredient_id", ingredientId);
+        values.put("quantity", quantity);
+        db.insert("recipe_ingredient", null, values);
+    }
+
+    // =============== Recipe Methods ===============
+
+    public List<Recipe> getAllRecipes() {
+        List<Recipe> recipeList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT * FROM recipe", null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Recipe recipe = new Recipe(
+                        cursor.getInt(0),
+                        cursor.getString(1),
+                        cursor.getString(2),
+                        cursor.getString(3)
+                );
+                recipeList.add(recipe);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return recipeList;
+    }
+
+    public long createRecipe(String name, String description, String imageName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("name", name);
+        cv.put("description", description);
+        cv.put("image", imageName);
+        return db.insertWithOnConflict("recipe", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
+    }
+
+    // =============== Reset & Password Methods ===============
+
+    public void resetDatabase() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.execSQL("DELETE FROM recipe_ingredient");
+            db.execSQL("DELETE FROM recipe");
+            db.execSQL("DELETE FROM Ingredient");
+            db.execSQL("DELETE FROM " + TABLE_USERS +
+                    " WHERE " + COL_EMAIL + " NOT IN ('admin@local','chef@local')");
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    public boolean resetUserPassword(String email) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT " + COL_ROLE + " FROM " + TABLE_USERS + " WHERE " + COL_EMAIL + " = ?",
+                new String[]{email}
+        );
+
+        if (!cursor.moveToFirst()) {
+            cursor.close();
+            return false;
+        }
+
+        String role = cursor.getString(0);
+        cursor.close();
+
+        String newPassword;
+        switch (role) {
+            case "ADMIN":
+                newPassword = "admin-pwd";
+                break;
+            case "CHEF":
+                newPassword = "chef-pwd";
+                break;
+            default:
+                newPassword = "waiter-pwd";
+                break;
+        }
+
+        ContentValues cv = new ContentValues();
+        cv.put(COL_PASSWORD, newPassword);
+        int rows = db.update(TABLE_USERS, cv, COL_EMAIL + " = ?", new String[]{email});
+        return rows > 0;
     }
 }
