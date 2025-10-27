@@ -7,7 +7,7 @@ Ceci est notre fichier README au format Markdown contenant des informations util
 - Des limites éventuelles (anomalie, fonctionnalité manquante...)
 
 ## Première version de notre modèle conceptuel
-![Diagramme conceptuel](diagramV1.png)
+![Diagramme conceptuel](diagramV1/diagramV2.png)
 Le fichier source PlantUML est disponible dans `doc/diagramV1.puml`.
 
 ## Description de notre projet
