@@ -78,4 +78,5 @@ uTaste est une application Android développée en Java avec Android Studio dans
 - Vanille: VANILLE005
 - Levure: LEVURE006
 - SEL: SEL007
+
 Ces QR codes pourront être scanné par le chef lorsqu'il "Add ingredients"
