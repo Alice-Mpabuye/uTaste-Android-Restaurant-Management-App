@@ -69,3 +69,13 @@ uTaste est une application Android développée en Java avec Android Studio dans
 2. Cloner le dépôt :
    ```bash
    git clone https://github.com/uOttawa-SEG2505/Groupe-33-repo.git
+
+3. Créer des QR codes en utilisant https://www.the-qrcode-generator.com/, et en créant un QR code de type "Plain Text" avec un des ces codes pour un de ces ingrédients:
+- Farine: FARINE001
+- Sucre: SUCRE002
+- Beurre: BEURRE003
+- Oeufs: OEUFS004
+- Vanille: VANILLE005
+- Levure: LEVURE006
+- SEL: SEL007
+Ces QR codes pourront être scanné par le chef lorsqu'il "Add ingredients"
