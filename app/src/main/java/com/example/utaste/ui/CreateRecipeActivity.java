@@ -1,5 +1,10 @@
 package com.example.utaste.ui;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONObject;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.Button;
@@ -22,13 +27,14 @@ import com.journeyapps.barcodescanner.ScanOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class CreateRecipeActivity extends AppCompatActivity {
 
     private EditText etName, etDescription;
     private Spinner spinnerImage;
     private Button btnSave, btnScanIngredient, btnGoToChefFromCreate;
     private ActivityResultLauncher<ScanOptions> barLauncher;
-    private UserDbHelper dbHelper; // For ingredient scanning only
+    private UserDbHelper dbHelper;
     private RecipeRepository recipeRepository;
 
     private RecyclerView rvIngredients;
@@ -43,7 +49,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_recipe);
 
-        dbHelper = new UserDbHelper(this); // Kept for getIngredientByQRCode
+        dbHelper = new UserDbHelper(this);
         recipeRepository = RecipeRepository.getInstance();
 
         etName = findViewById(R.id.etRecipeName);
@@ -56,7 +62,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
 
         rvIngredients = findViewById(R.id.rvIngredients);
         ingredientList = new ArrayList<>();
-        adapter = new IngredientAdapter(ingredientList, null); // Listener is not needed here
+        adapter = new IngredientAdapter(ingredientList, null);
         rvIngredients.setLayoutManager(new LinearLayoutManager(this));
         rvIngredients.setAdapter(adapter);
 
@@ -80,12 +86,14 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 String qrValue = result.getContents();
                 Ingredient ing = dbHelper.getIngredientByQRCode(qrValue);
                 if (ing != null) {
-                    showQuantityDialog(ing);
+                    fetchNutritionFromOpenFoodFacts(ing.getQrCode(), ing);
                 } else {
-                    Toast.makeText(this, "Ingredient not found", Toast.LENGTH_SHORT).show();
+                    Ingredient newIngredient = new Ingredient(0, "Unknown ingredient", qrValue);
+                    fetchNutritionFromOpenFoodFacts(qrValue, newIngredient);
                 }
             }
         });
+
 
         btnSave.setOnClickListener(v -> saveOrUpdateRecipe());
         btnScanIngredient.setOnClickListener(v -> ScanCode());
@@ -164,6 +172,20 @@ public class CreateRecipeActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void showNutritionDialog(Ingredient ingredient) {
+        String info = "carbohydrates for 100g: " + ingredient.getCarbohydrates() + "g\n"
+                + "fat for 100g: " + ingredient.getFat() + "g\n"
+                + "proteins for 100g: " + ingredient.getProtein() + "g\n"
+                + "fiber for 100g: " + ingredient.getFiber() + "g\n"
+                + "salt for 100g: " + ingredient.getSalt() + "g";
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Nutrition info for " + ingredient.getName())
+                .setMessage(info)
+                .setPositiveButton("OK", (d, w) -> showQuantityDialog(ingredient))
+                .show();
+    }
+
     private void ScanCode() {
         ScanOptions options = new ScanOptions();
         options.setPrompt("Scan the QR Code");
@@ -172,4 +194,70 @@ public class CreateRecipeActivity extends AppCompatActivity {
         options.setCaptureActivity(CaptureAct.class);
         barLauncher.launch(options);
     }
+
+    private void fetchNutritionFromOpenFoodFacts(String barcode, Ingredient ingredient) {
+        String url = "https://world.openfoodfacts.org/api/v0/product/" + barcode + ".json";
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        if (response.getInt("status") == 1) {
+                            JSONObject product = response.getJSONObject("product");
+
+                            String productName = product.optString("product_name", "Unknown ingredient");
+                            ingredient.setName(productName);
+
+                            JSONObject nutriments = product.getJSONObject("nutriments");
+                            StringBuilder info = new StringBuilder();
+
+                            if (nutriments.has("carbohydrates_100g"))
+                                info.append("Carbohydrates for 100g: ")
+                                        .append(nutriments.getDouble("carbohydrates_100g")).append("g\n");
+
+                            if (nutriments.has("fat_100g"))
+                                info.append("Fat for 100g: ")
+                                        .append(nutriments.getDouble("fat_100g")).append("g\n");
+
+                            if (nutriments.has("fiber_100g"))
+                                info.append("Fiber for 100g: ")
+                                        .append(nutriments.getDouble("fiber_100g")).append("g\n");
+
+                            if (nutriments.has("proteins_100g"))
+                                info.append("Proteins for 100g: ")
+                                        .append(nutriments.getDouble("proteins_100g")).append("g\n");
+
+                            if (nutriments.has("salt_100g"))
+                                info.append("Salt for 100g: ")
+                                        .append(nutriments.getDouble("salt_100g")).append("g\n");
+
+                            new AlertDialog.Builder(this)
+                                    .setTitle("Ingredient: " + ingredient.getName())
+                                    .setMessage(info.toString())
+                                    .setPositiveButton("Add to Recipe", (dialog, which) -> {
+                                        addIngredientToRecipe(ingredient);
+                                    })
+                                    .setNegativeButton("Cancel", null)
+                                    .show();
+
+                        } else {
+                            Toast.makeText(this, "Ingredient not found on OpenFoodFacts", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing data", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    error.printStackTrace();
+                    Toast.makeText(this, "Failed to fetch data", Toast.LENGTH_SHORT).show();
+                });
+
+        queue.add(request);
+    }
+    private void addIngredientToRecipe(Ingredient ingredient) {
+        showQuantityDialog(ingredient);
+    }
+
 }
