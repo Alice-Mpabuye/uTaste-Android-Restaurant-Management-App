@@ -163,7 +163,6 @@ public class UserDbHelper extends SQLiteOpenHelper {
         try {
             db.execSQL("DELETE FROM recipe_ingredient");
             db.execSQL("DELETE FROM recipe");
-            db.execSQL("DELETE FROM Ingredient");
             db.execSQL("DELETE FROM " + TABLE_USERS +
                     " WHERE " + COL_EMAIL + " NOT IN ('admin@local','chef@local')");
             db.setTransactionSuccessful();
