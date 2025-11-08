@@ -224,11 +224,10 @@ public class UserRepository {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.beginTransaction();
             try {
+                // supprime seulement waiters et recipes mais pas les ingredients
                 db.execSQL("DELETE FROM users WHERE role = 'WAITER'");
                 db.execSQL("DELETE FROM recipe_ingredient");
                 db.execSQL("DELETE FROM recipe");
-                db.execSQL("DELETE FROM Ingredient");
-
 
                 db.setTransactionSuccessful();
             } catch (Exception e) {
