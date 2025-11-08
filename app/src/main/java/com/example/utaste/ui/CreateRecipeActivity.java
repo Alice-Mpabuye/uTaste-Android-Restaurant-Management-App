@@ -1,21 +1,22 @@
 package com.example.utaste.ui;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-import org.json.JSONObject;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.utaste.R;
 import com.example.utaste.data.Ingredient;
 import com.example.utaste.data.Recipe;
@@ -24,25 +25,28 @@ import com.example.utaste.data.RecipeRepository;
 import com.example.utaste.data.UserDbHelper;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
+
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
-
 
 public class CreateRecipeActivity extends AppCompatActivity {
 
     private EditText etName, etDescription;
     private Spinner spinnerImage;
     private Button btnSave, btnScanIngredient, btnGoToChefFromCreate;
-    private ActivityResultLauncher<ScanOptions> barLauncher;
+
     private UserDbHelper dbHelper;
     private RecipeRepository recipeRepository;
 
     private RecyclerView rvIngredients;
     private List<RecipeIngredient> ingredientList;
-    private IngredientAdapter adapter;
+    private IngredientDetailAdapter adapter;
 
     private long currentRecipeId = -1;
     private boolean isEditMode = false;
+    private ActivityResultLauncher<ScanOptions> barLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,18 +66,29 @@ public class CreateRecipeActivity extends AppCompatActivity {
 
         rvIngredients = findViewById(R.id.rvIngredients);
         ingredientList = new ArrayList<>();
-        adapter = new IngredientAdapter(ingredientList, null);
-        rvIngredients.setLayoutManager(new LinearLayoutManager(this));
-        rvIngredients.setAdapter(adapter);
 
+        adapter = new IngredientDetailAdapter(
+                this,
+                ingredientList,
+                -1,     // recipeId not yet saved
+                false,  // readOnly = false
+                true    // isCreateMode = true
+        );
+        rvIngredients.setAdapter(adapter);
+        rvIngredients.setLayoutManager(new LinearLayoutManager(this));
+        rvIngredients.setNestedScrollingEnabled(false);
+
+
+        // Spinner setup (you might have your own adapter for images)
         List<RecipeImage> imageList = new ArrayList<>();
         imageList.add(new RecipeImage("Brownie", R.drawable.brownie));
         imageList.add(new RecipeImage("Cookie", R.drawable.cookies));
         imageList.add(new RecipeImage("Vanilla cake", R.drawable.vanilla_cake));
 
-        RecipeImageAdapter adapter_ = new RecipeImageAdapter(this, imageList);
-        spinnerImage.setAdapter(adapter_);
+        RecipeImageAdapter imageAdapter = new RecipeImageAdapter(this, imageList);
+        spinnerImage.setAdapter(imageAdapter);
 
+        // If editing an existing recipe
         if (getIntent().hasExtra("RECIPE_ID")) {
             isEditMode = true;
             currentRecipeId = getIntent().getIntExtra("RECIPE_ID", -1);
@@ -81,6 +96,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
             btnSave.setText("Update Recipe");
         }
 
+        // Barcode scanner setup
         barLauncher = registerForActivityResult(new ScanContract(), result -> {
             if (result.getContents() != null) {
                 String qrValue = result.getContents();
@@ -94,9 +110,8 @@ public class CreateRecipeActivity extends AppCompatActivity {
             }
         });
 
-
         btnSave.setOnClickListener(v -> saveOrUpdateRecipe());
-        btnScanIngredient.setOnClickListener(v -> ScanCode());
+        btnScanIngredient.setOnClickListener(v -> scanCode());
         btnGoToChefFromCreate.setOnClickListener(v -> finish());
     }
 
@@ -107,6 +122,15 @@ public class CreateRecipeActivity extends AppCompatActivity {
             etDescription.setText(recipe.getDescription());
             ingredientList.addAll(recipeRepository.getIngredientsForRecipe((int) currentRecipeId));
             adapter.notifyDataSetChanged();
+
+            String imageName = recipe.getImage();
+            for (int i = 0; i < spinnerImage.getCount(); i++) {
+                RecipeImage item = (RecipeImage) spinnerImage.getItemAtPosition(i);
+                if (item.getName().equals(imageName)) {
+                    spinnerImage.setSelection(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -139,54 +163,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
         }
     }
 
-    private void showQuantityDialog(Ingredient ingredient) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Quantity (%) for " + ingredient.getName());
-
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        input.setHint("Ex: 20 for 20%");
-        builder.setView(input);
-
-        builder.setPositiveButton("Add", (dialog, which) -> {
-            String text = input.getText().toString();
-            if (text.isEmpty()) {
-                Toast.makeText(this, "Please enter a quantity", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            double qty;
-            try {
-                qty = Double.parseDouble(text);
-            } catch (NumberFormatException e) {
-                Toast.makeText(this, "Invalid quantity", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            RecipeIngredient ri = new RecipeIngredient(ingredient.getId(), ingredient.getName(), qty);
-            ingredientList.add(ri);
-            adapter.notifyItemInserted(ingredientList.size() - 1);
-        });
-
-        builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
-        builder.show();
-    }
-
-    private void showNutritionDialog(Ingredient ingredient) {
-        String info = "carbohydrates for 100g: " + ingredient.getCarbohydrates() + "g\n"
-                + "fat for 100g: " + ingredient.getFat() + "g\n"
-                + "proteins for 100g: " + ingredient.getProtein() + "g\n"
-                + "fiber for 100g: " + ingredient.getFiber() + "g\n"
-                + "salt for 100g: " + ingredient.getSalt() + "g";
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Nutrition info for " + ingredient.getName())
-                .setMessage(info)
-                .setPositiveButton("OK", (d, w) -> showQuantityDialog(ingredient))
-                .show();
-    }
-
-    private void ScanCode() {
+    private void scanCode() {
         ScanOptions options = new ScanOptions();
         options.setPrompt("Scan the QR Code");
         options.setBeepEnabled(true);
@@ -235,9 +212,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
                             new AlertDialog.Builder(this)
                                     .setTitle("Ingredient: " + ingredient.getName())
                                     .setMessage(info.toString())
-                                    .setPositiveButton("Add to Recipe", (dialog, which) -> {
-                                        addIngredientToRecipe(ingredient);
-                                    })
+                                    .setPositiveButton("Add to Recipe", (dialog, which) -> showQuantityDialog(ingredient))
                                     .setNegativeButton("Cancel", null)
                                     .show();
 
@@ -256,8 +231,50 @@ public class CreateRecipeActivity extends AppCompatActivity {
 
         queue.add(request);
     }
-    private void addIngredientToRecipe(Ingredient ingredient) {
-        showQuantityDialog(ingredient);
+
+    private void showQuantityDialog(Ingredient ingredient) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Quantity (%) for " + ingredient.getName());
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setHint("Ex: 20 for 20%");
+        builder.setView(input);
+
+        builder.setPositiveButton("Add", (dialog, which) -> {
+            String text = input.getText().toString();
+            if (text.isEmpty()) {
+                Toast.makeText(this, "Please enter a quantity", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            double qty;
+            try {
+                qty = Double.parseDouble(text);
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Invalid quantity", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // --- INSERT NEW INGREDIENT IF NEEDED ---
+            if (ingredient.getId() == 0) {
+                long newId = recipeRepository.insertIngredient(ingredient);
+                if (newId != -1) {
+                    ingredient.setId((int) newId);
+                } else {
+                    // Ingredient already exists, fetch its ID
+                    Ingredient existing = dbHelper.getIngredientByName(ingredient.getName());
+                    if (existing != null) ingredient.setId(existing.getId());
+                }
+            }
+
+            RecipeIngredient ri = new RecipeIngredient(ingredient.getId(), ingredient.getName(), qty);
+            ingredientList.add(ri);
+            adapter.notifyItemInserted(ingredientList.size() - 1);
+        });
+
+        builder.setNegativeButton("Cancel", (d, w) -> d.dismiss());
+        builder.show();
     }
 
 }

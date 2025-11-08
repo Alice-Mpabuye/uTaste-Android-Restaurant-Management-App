@@ -65,14 +65,7 @@ public class UserDbHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_RECIPE);
         db.execSQL(CREATE_TABLE_RECIPE_INGREDIENT);
 
-        // Prefill ingredients
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('Farine', 'FARINE001')");
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('Sucre', 'SUCRE002')");
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('Beurre', 'BEURRE003')");
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('Oeufs', 'OEUFS004')");
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('Vanille', 'VANILLE005')");
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('Levure', 'LEVURE006')");
-        db.execSQL("INSERT INTO Ingredient (name, qrCode) VALUES ('SEL', 'SEL007')");
+
     }
 
     @Override

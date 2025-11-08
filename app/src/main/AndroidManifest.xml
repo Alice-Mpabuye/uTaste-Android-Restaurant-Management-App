@@ -37,7 +37,7 @@
         <activity android:name=".ui.WaiterActivity" />
         <activity android:name=".ui.CreateRecipeActivity"/>
         <activity android:name=".ui.RecipeListActivity"/>
-        <activity android:name=".ui.RecipeDetailActivity"/>
+        <activity android:name=".ui.EditRecipeActivity" />
 
     </application>
 

@@ -15,8 +15,28 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.Vi
 
     private List<RecipeIngredient> ingredients;
 
-    public IngredientAdapter(List<RecipeIngredient> ingredients, Object o) {
+    // Click listener interfaces
+    public interface OnItemClickListener {
+        void onItemClick(int position, RecipeIngredient ingredient);
+    }
+
+    public interface OnItemLongClickListener {
+        boolean onItemLongClick(int position, RecipeIngredient ingredient);
+    }
+
+    private OnItemClickListener clickListener;
+    private OnItemLongClickListener longClickListener;
+
+    public IngredientAdapter(List<RecipeIngredient> ingredients) {
         this.ingredients = ingredients;
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.clickListener = listener;
+    }
+
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.longClickListener = listener;
     }
 
     @Override
@@ -29,12 +49,9 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.Vi
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         RecipeIngredient ing = ingredients.get(position);
-        if (ing.getName() != null) {
-            holder.tvName.setText(ing.getName());
-        } else {
-            holder.tvName.setText("No name"); // Fallback text
-        }
+        holder.tvName.setText(ing.getName() != null ? ing.getName() : "No name");
         holder.tvQty.setText(ing.getQuantity() + " %");
+
     }
 
     @Override
