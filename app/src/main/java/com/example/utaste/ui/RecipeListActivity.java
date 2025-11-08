@@ -7,14 +7,18 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.utaste.R;
 import com.example.utaste.data.Recipe;
 import com.example.utaste.data.RecipeIngredient;
 import com.example.utaste.data.RecipeRepository;
+
 import java.util.List;
 
 public class RecipeListActivity extends AppCompatActivity implements RecipeAdapter.OnRecipeClickListener {
@@ -82,18 +86,42 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
         builder.setTitle(recipe.getName());
 
         int imageResId = getResources().getIdentifier(recipe.getImage(), "drawable", getPackageName());
-        if (imageResId != 0) {
-            recipeImage.setImageResource(imageResId);
-        }
+        if (imageResId != 0) recipeImage.setImageResource(imageResId);
 
         List<RecipeIngredient> ingredients = recipeRepository.getIngredientsForRecipe(recipe.getId());
-        IngredientDetailAdapter adapter = new IngredientDetailAdapter(ingredients);
-        ingredientsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        IngredientDetailAdapter adapter = new IngredientDetailAdapter(
+                this,
+                ingredients,
+                recipe.getId(),
+                true,  // readOnly = true
+                false  // isCreateMode = false
+        );
         ingredientsRecyclerView.setAdapter(adapter);
+        ingredientsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
 
-        AlertDialog dialog = builder.create();
-        dialog.show();
+
+
+        builder.setPositiveButton("Edit", (dialog, which) -> {
+            Intent intent = new Intent(RecipeListActivity.this, EditRecipeActivity.class);
+            intent.putExtra("RECIPE_ID", recipe.getId());
+            startActivity(intent);
+        });
+
+        builder.setNegativeButton("Delete", (dialog, which) -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Delete Recipe")
+                    .setMessage("Are you sure you want to delete this recipe?")
+                    .setPositiveButton("Yes", (d, w) -> {
+                        recipeRepository.deleteRecipe(recipe.getId());
+                        Toast.makeText(this, "Recipe deleted", Toast.LENGTH_SHORT).show();
+                        updateRecipeList();
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
+        });
+
+        builder.setNeutralButton("Close", (dialog, which) -> dialog.dismiss());
+        builder.create().show();
     }
 }

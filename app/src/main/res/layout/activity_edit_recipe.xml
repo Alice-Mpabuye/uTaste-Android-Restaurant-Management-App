@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".ui.EditRecipeActivity">
+
+    <EditText
+        android:id="@+id/editRecipeName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Recipe name" />
+
+    <EditText
+        android:id="@+id/editRecipeDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Description"
+        android:layout_marginTop="12dp" />
+
+    <!-- New image spinner -->
+    <Spinner
+        android:id="@+id/spinnerRecipeImageEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
+
+    <!-- Ingredient list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvEditIngredients"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+
+    <!-- Buttons -->
+    <Button
+        android:id="@+id/btnSaveChanges"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save changes"
+        android:layout_marginTop="24dp" />
+
+    <Button
+        android:id="@+id/btnCancelEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        android:layout_marginTop="8dp" />
+</LinearLayout>

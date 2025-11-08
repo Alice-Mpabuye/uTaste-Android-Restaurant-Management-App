@@ -30,7 +30,8 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     @NonNull
     @Override
     public RecipeViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_recipe, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_recipe, parent, false);
         return new RecipeViewHolder(view);
     }
 
@@ -48,9 +49,7 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         }
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onRecipeClick(recipe);
-            }
+            if (listener != null) listener.onRecipeClick(recipe);
         });
     }
 

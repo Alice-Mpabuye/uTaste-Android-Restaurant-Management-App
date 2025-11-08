@@ -108,8 +108,26 @@ public class RecipeRepository {
         return ingredients;
     }
 
+    public long insertIngredient(Ingredient ing) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("name", ing.getName());
+        cv.put("qrCode", ing.getQrCode());
+        return db.insertWithOnConflict("Ingredient", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
+    }
+
+
     public void clearIngredientsForRecipe(int recipeId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.delete("recipe_ingredient", "recipe_id = ?", new String[]{String.valueOf(recipeId)});
     }
+
+    public void updateIngredientQuantity(int recipeId, int ingredientId, double quantity) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("quantity", quantity);
+        db.update("recipe_ingredient", values, "recipe_id = ? AND ingredient_id = ?",
+                new String[]{String.valueOf(recipeId), String.valueOf(ingredientId)});
+    }
+
 }
