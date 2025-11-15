@@ -10,10 +10,23 @@ package "com.example.utaste.data" {
         - id: int
         - name: String
         - qrCode: String
+        - carbohydrates: double
+        - fat: double
+        - protein: double
+        - fiber: double
+        - salt: double
         + Ingredient(id: int, name: String, qrCode: String)
+        + Ingredient(id: int, name: String, qrCode: String, carbohydrates: double, fat: double, protein: double, fiber: double, salt: double)
         + getId(): int
         + getName(): String
         + getQrCode(): String
+        + getCarbohydrates(): double
+        + getFat(): double
+        + getProtein(): double
+        + getFiber(): double
+        + getSalt(): double
+        + setName(String name): void
+        + setId(int id): void
     }
 
     class Recipe {
@@ -32,18 +45,29 @@ package "com.example.utaste.data" {
         - ingredientId: int
         - name: String
         - quantity: double
-        + RecipeIngredient(ingredientId: int, name: String, quantity: double)
+        - carbs: double
+        - protein: double
+        - fat: double
+        - fiber: double
+        - salt: double
+        + RecipeIngredient(ingredientId: int, name: String, quantity: double, carbs: double, fat: double, protein: double, fiber: double, salt: double)
         + getIngredientId(): int
         + getName(): String
         + getQuantity(): double
+        + setQuantity(quantity: double)
+        + getCarbs(): double
+        + getProtein(): double
+        + getFat(): double
+        + getFiber(): double
+        + getSalt(): double
     }
 
     class RecipeRepository {
-        - static instance: RecipeRepository
+        - RecipeRepository: instance
         - dbHelper: UserDbHelper
         - RecipeRepository(context: Context)
         + static synchronized init(context: Context): void
-        + static synchronized getInstance(): RecipeRepository
+        + getInstance(): RecipeRepository
         + createRecipe(name: String, description: String, imageName: String): long
         + listRecipes(): List<Recipe>
         + getRecipeById(recipeId: int): Recipe
@@ -51,6 +75,7 @@ package "com.example.utaste.data" {
         + deleteRecipe(id: int): void
         + addIngredientToRecipe(recipeId: int, ingredientId: int, quantity: double): void
         + getIngredientsForRecipe(recipeId: int): List<RecipeIngredient>
+        + insertIngredient(Ingredient ing): long
         + clearIngredientsForRecipe(recipeId: int): void
     }
 
@@ -65,6 +90,7 @@ package "com.example.utaste.data" {
         + createRecipe(name: String, description: String, imageName: String): long
         + resetDatabase(): void
         + resetUserPassword(email: String): boolean
+        + updateIngredientQuantity(int recipeId, int ingredientId, double quantity): void
     }
 
     class UserRepository {
@@ -92,7 +118,7 @@ package "com.example.utaste.data" {
 
     '============ relationships ============
     UserDbHelper -|> SQLiteOpenHelper
-    RecipeRepository --> UserDbHelper
+    RecipeRepository ..> UserDbHelper
     RecipeRepository --> Recipe
     RecipeRepository --> RecipeIngredient
     UserRepository --> User
@@ -206,6 +232,7 @@ package "com.example.utaste.ui" {
         - void saveOrUpdateRecipe()
         - void showQuantityDialog(Ingredient ingredient)
         - void scanCode()  
+        - void fetchNutritionFromOpenFoodFacts(String barcode, Ingredient ingredient)
     }
 
     class IngredientAdapter {
@@ -218,10 +245,18 @@ package "com.example.utaste.ui" {
     }
 
     class IngredientDetailAdapter {
-        - final List<RecipeIngredient> ingredients
-        + IngredientDetailAdapter(List<RecipeIngredient> ingredients)
+        - context: Context
+        - ingredients: List<RecipeIngredient>
+        - recipeId: int
+        - isCreateMode: boolean
+        - readonly: boolean
+        + IngredientDetailAdapter()
         + ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
         + void onBindViewHolder(@NonNull ViewHolder holder, int position)
+        - showIngredientOptions(int position, RecipeIngredient ingredient): void
+        - showQuantityDialog(int position, RecipeIngredient ingredient): void
+        - deleteIngredient(int position): void
+        - updateIngredientsInRepo(): void
         + int getItemCount()
     }
 
@@ -290,6 +325,25 @@ package "com.example.utaste.ui" {
         + void onRecipeClick(Recipe recipe)
     }
 
+    class TextAdapter{
+        - localdata: List<String>
+        + TextAdapter()
+        + onCreateViewHolder(ViewGroup parent, int viewType): ViewHolder
+        + onBindViewHolder(ViewHolder holder, int position): void
+        + getItemCount(): int
+    }
+
+    class ViewRecipeActivity{
+        - tvRecipeName: TextView
+        - tvRecipeDescription: TextView
+        - ivRecipeImage: ImageView
+        - rvIngredients: RecyclerView
+        - recipeId: int
+        - ingredientList: List<RecipeIngredient>
+        # onCreate(Bundle savedInstanceState): void
+        - loadRecipeData(): void
+    }
+
     class WaiterActivity {
         - Button btnLogout
         - Button btnChangePassword
@@ -306,23 +360,42 @@ package "com.example.utaste.ui" {
 
     '============ relationships ============
 
-    AdminActivity --> AppCompatActivity : extends
-    CaptureAct --> CaptureActivity : extends
-    ChefActivity --> AppCompatActivity : extends
-    CreateRecipeActivity --> AppCompatActivity : extends
-
-    LoginActivity --> AppCompatActivity : extends
-    RecipeImageAdapter --> ArrayAdapter : extends
-    RecipeImageAdapter --> ArrayAdapter : extends
-
-    RecipeListActivity --> AppCompatActivity : extends
+    AdminActivity -|> AppCompatActivity
+    CaptureAct -|> CaptureActivity
     
-    WaiterActivity --> AppCompatActivity : extends
-    WelcomeActivity --> AppCompatActivity : extends
-    MainActivity --> AppCompatActivity : extends
+    ChefActivity -|> AppCompatActivity
+    ChefActivity ..> RecipeRepository
+    
+    CreateRecipeActivity -|> AppCompatActivity
+    CreateRecipeActivity --> IngredientDetailAdapter
+    CreateRecipeActivity ..> RecipeRepository
 
-    IngredientAdapter --> RecipeIngredient: uses
-    IngredientAdapter --> ViewHolder : uses
+    LoginActivity -|> AppCompatActivity
+    LoginActivity ..> UserRepository
+    
+    RecipeListActivity -|> AppCompatActivity
+    RecipeListActivity o-- RecipeAdapter
+    RecipeListActivity --> IngredientDetailAdapter
+    RecipeListActivity --> TextAdapter
+    RecipeListActivity ..> RecipeRepository
+    
+    RecipeAdapter -|> RecyclerView.Adapter
+    RecipeAdapter o-- Recipe
+
+    IngredientDetailAdapter -|> RecyclerView.Adapter
+    IngredientDetailAdapter o-- RecipeIngredient
+
+    TextAdapter -|> RecyclerView.Adapter
+    TextAdapter o-- String
+
+    WaiterActivity -|> AppCompatActivity
+    WaiterActivity ..> UserRepository
+
+    WelcomeActivity -|> AppCompatActivity
+    MainActivity -|> AppCompatActivity
+
+    IngredientAdapter --> RecipeIngredient
+    IngredientAdapter --> ViewHolder
     ViewHolder --> TextView
 }
 

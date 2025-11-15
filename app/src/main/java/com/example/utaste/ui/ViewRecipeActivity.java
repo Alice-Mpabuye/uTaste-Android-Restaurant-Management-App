@@ -1,7 +1,9 @@
 package com.example.utaste.ui;
 
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -10,6 +12,8 @@ import com.example.utaste.R;
 import com.example.utaste.data.Recipe;
 import com.example.utaste.data.RecipeIngredient;
 import com.example.utaste.data.RecipeRepository;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class ViewRecipeActivity extends AppCompatActivity {
@@ -30,6 +34,7 @@ public class ViewRecipeActivity extends AppCompatActivity {
         tvRecipeDescription = findViewById(R.id.tvRecipeDescription);
         ivRecipeImage = findViewById(R.id.ivRecipeImage);
         rvIngredients = findViewById(R.id.rvViewIngredients);
+
 
         recipeId = getIntent().getIntExtra("RECIPE_ID", -1);
         if (recipeId != -1) {
@@ -58,6 +63,7 @@ public class ViewRecipeActivity extends AppCompatActivity {
                     true,   // readOnly = true
                     false   // isCreateMode = false
             );
+
             rvIngredients.setAdapter(adapter);
             rvIngredients.setLayoutManager(new LinearLayoutManager(this));
             rvIngredients.setNestedScrollingEnabled(false);

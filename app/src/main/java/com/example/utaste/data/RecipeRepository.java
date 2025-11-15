@@ -97,11 +97,11 @@ public class RecipeRepository {
     public List<RecipeIngredient> getIngredientsForRecipe(int recipeId) {
         List<RecipeIngredient> ingredients = new ArrayList<>();
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        String query = "SELECT i.id, i.name, ri.quantity FROM Ingredient i INNER JOIN recipe_ingredient ri ON i.id = ri.ingredient_id WHERE ri.recipe_id = ?";
+        String query = "SELECT i.id, i.name, ri.quantity, i.carbohydrates, i.fat, i.protein, i.fiber, i.salt FROM Ingredient i INNER JOIN recipe_ingredient ri ON i.id = ri.ingredient_id WHERE ri.recipe_id = ?";
         Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(recipeId)});
         if (cursor.moveToFirst()) {
             do {
-                ingredients.add(new RecipeIngredient(cursor.getInt(0), cursor.getString(1), cursor.getDouble(2)));
+                ingredients.add(new RecipeIngredient(cursor.getInt(0), cursor.getString(1), cursor.getDouble(2), cursor.getDouble(3), cursor.getDouble(4), cursor.getDouble(5), cursor.getDouble(6), cursor.getDouble(7)));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -113,6 +113,11 @@ public class RecipeRepository {
         ContentValues cv = new ContentValues();
         cv.put("name", ing.getName());
         cv.put("qrCode", ing.getQrCode());
+        cv.put("carbohydrates", ing.getCarbohydrates());
+        cv.put("fat", ing.getFat());
+        cv.put("protein", ing.getProtein());
+        cv.put("fiber", ing.getFiber());
+        cv.put("salt", ing.getSalt());
         return db.insertWithOnConflict("Ingredient", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
     }
 

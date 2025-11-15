@@ -87,7 +87,12 @@ public class IngredientDetailAdapter extends RecyclerView.Adapter<IngredientDeta
                 RecipeIngredient updatedIngredient = new RecipeIngredient(
                         ingredient.getIngredientId(),
                         ingredient.getName(),
-                        newQty
+                        newQty,
+                        ingredient.getCarbs(),
+                        ingredient.getProtein(),
+                        ingredient.getFat(),
+                        ingredient.getFiber(),
+                        ingredient.getSalt()
                 );
                 ingredients.set(position, updatedIngredient);
                 notifyItemChanged(position);
