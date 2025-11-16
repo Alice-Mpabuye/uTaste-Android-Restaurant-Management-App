@@ -15,7 +15,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Ingrédients :"
+        android:text="Ingredients :"
         android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -23,5 +23,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:maxHeight="200dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Calorie balance:"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvViewCalories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

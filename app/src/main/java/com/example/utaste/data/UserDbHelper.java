@@ -11,7 +11,7 @@ import java.util.List;
 
 public class UserDbHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "utaste.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     public static final String TABLE_USERS = "users";
     public static final String COL_EMAIL = "email";
@@ -37,7 +37,12 @@ public class UserDbHelper extends SQLiteOpenHelper {
             "CREATE TABLE Ingredient (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "name TEXT NOT NULL," +
-                    "qrCode TEXT UNIQUE NOT NULL" +
+                    "qrCode TEXT UNIQUE NOT NULL," +
+                    "carbohydrates REAL," +
+                    "fat REAL," +
+                    "protein REAL," +
+                    "fiber REAL," +
+                    "salt REAL" +
                     ");";
 
     private static final String CREATE_TABLE_RECIPE =
@@ -81,13 +86,18 @@ public class UserDbHelper extends SQLiteOpenHelper {
 
     public Ingredient getIngredientByQRCode(String qrCode) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT id, name FROM Ingredient WHERE qrCode = ?", new String[]{qrCode});
+        Cursor cursor = db.rawQuery("SELECT * FROM Ingredient WHERE qrCode = ?", new String[]{qrCode});
 
         if (cursor.moveToFirst()) {
             Ingredient ing = new Ingredient(
                     cursor.getInt(0),
                     cursor.getString(1),
-                    qrCode
+                    cursor.getString(2),
+                    cursor.getDouble(3),
+                    cursor.getDouble(4),
+                    cursor.getDouble(5),
+                    cursor.getDouble(6),
+                    cursor.getDouble(7)
             );
             cursor.close();
             return ing;
@@ -98,9 +108,18 @@ public class UserDbHelper extends SQLiteOpenHelper {
 
     public Ingredient getIngredientByName(String name) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT id, qrCode FROM Ingredient WHERE name = ?", new String[]{name});
+        Cursor cursor = db.rawQuery("SELECT * FROM Ingredient WHERE name = ?", new String[]{name});
         if (cursor.moveToFirst()) {
-            Ingredient ing = new Ingredient(cursor.getInt(0), name, cursor.getString(1));
+            Ingredient ing = new Ingredient(
+                    cursor.getInt(0),
+                    cursor.getString(1),
+                    cursor.getString(2),
+                    cursor.getDouble(3),
+                    cursor.getDouble(4),
+                    cursor.getDouble(5),
+                    cursor.getDouble(6),
+                    cursor.getDouble(7)
+            );
             cursor.close();
             return ing;
         }
@@ -143,7 +162,7 @@ public class UserDbHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put("name", name);
-        cv.put("description", description);
+cv.put("description", description);
         cv.put("image", imageName);
         return db.insertWithOnConflict("recipe", null, cv, SQLiteDatabase.CONFLICT_IGNORE);
     }

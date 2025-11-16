@@ -187,32 +187,25 @@ public class CreateRecipeActivity extends AppCompatActivity {
                             ingredient.setName(productName);
 
                             JSONObject nutriments = product.getJSONObject("nutriments");
+                            double carbs = nutriments.optDouble("carbohydrates_100g", 0.0);
+                            double fat = nutriments.optDouble("fat_100g", 0.0);
+                            double fiber = nutriments.optDouble("fiber_100g", 0.0);
+                            double protein = nutriments.optDouble("proteins_100g", 0.0);
+                            double salt = nutriments.optDouble("salt_100g", 0.0);
+
+                            Ingredient newIngredient = new Ingredient(ingredient.getId(), ingredient.getName(), ingredient.getQrCode(), carbs, fat, protein, fiber, salt);
+
                             StringBuilder info = new StringBuilder();
-
-                            if (nutriments.has("carbohydrates_100g"))
-                                info.append("Carbohydrates for 100g: ")
-                                        .append(nutriments.getDouble("carbohydrates_100g")).append("g\n");
-
-                            if (nutriments.has("fat_100g"))
-                                info.append("Fat for 100g: ")
-                                        .append(nutriments.getDouble("fat_100g")).append("g\n");
-
-                            if (nutriments.has("fiber_100g"))
-                                info.append("Fiber for 100g: ")
-                                        .append(nutriments.getDouble("fiber_100g")).append("g\n");
-
-                            if (nutriments.has("proteins_100g"))
-                                info.append("Proteins for 100g: ")
-                                        .append(nutriments.getDouble("proteins_100g")).append("g\n");
-
-                            if (nutriments.has("salt_100g"))
-                                info.append("Salt for 100g: ")
-                                        .append(nutriments.getDouble("salt_100g")).append("g\n");
+                            info.append("Carbohydrates for 100g: ").append(carbs).append("g\n");
+                            info.append("Fat for 100g: ").append(fat).append("g\n");
+                            info.append("Fiber for 100g: ").append(fiber).append("g\n");
+                            info.append("Proteins for 100g: ").append(protein).append("g\n");
+                            info.append("Salt for 100g: ").append(salt).append("g\n");
 
                             new AlertDialog.Builder(this)
-                                    .setTitle("Ingredient: " + ingredient.getName())
+                                    .setTitle("Ingredient: " + newIngredient.getName())
                                     .setMessage(info.toString())
-                                    .setPositiveButton("Add to Recipe", (dialog, which) -> showQuantityDialog(ingredient))
+                                    .setPositiveButton("Add to Recipe", (dialog, which) -> showQuantityDialog(newIngredient))
                                     .setNegativeButton("Cancel", null)
                                     .show();
 
@@ -268,7 +261,7 @@ public class CreateRecipeActivity extends AppCompatActivity {
                 }
             }
 
-            RecipeIngredient ri = new RecipeIngredient(ingredient.getId(), ingredient.getName(), qty);
+            RecipeIngredient ri = new RecipeIngredient(ingredient.getId(), ingredient.getName(), qty, ingredient.getCarbohydrates(), ingredient.getFat(), ingredient.getProtein(), ingredient.getFiber(), ingredient.getSalt());
             ingredientList.add(ri);
             adapter.notifyItemInserted(ingredientList.size() - 1);
         });

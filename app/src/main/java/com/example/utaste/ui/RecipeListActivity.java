@@ -19,6 +19,7 @@ import com.example.utaste.data.Recipe;
 import com.example.utaste.data.RecipeIngredient;
 import com.example.utaste.data.RecipeRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeListActivity extends AppCompatActivity implements RecipeAdapter.OnRecipeClickListener {
@@ -99,11 +100,33 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
         ingredientsRecyclerView.setAdapter(adapter);
         ingredientsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        RecyclerView calorieRecyclerView = dialogView.findViewById(R.id.rvViewCalories);
 
+        double totalFat = 0.0;
+        double totalCarbs = 0.0;
+        double totalProtein = 0.0;
+
+        for (RecipeIngredient ingredient : ingredients) {
+            double quantityFactor = ingredient.getQuantity() / 100.0;
+            totalFat += ingredient.getFat() * quantityFactor;
+            totalCarbs += ingredient.getCarbs() * quantityFactor; // Corrected method name
+            totalProtein += ingredient.getProtein() * quantityFactor;
+        }
+        double totalCalories = (totalFat * 9) + (totalCarbs * 4) + (totalProtein * 4);
+
+        List<String> nutritionFacts = new ArrayList<>();
+        nutritionFacts.add(String.format("Calories: %.1f kcal", totalCalories));
+        nutritionFacts.add(String.format("Lipides: %.1f g", totalFat));
+        nutritionFacts.add(String.format("Glucides: %.1f g", totalCarbs));
+        nutritionFacts.add(String.format("Protein: %.1f g", totalProtein));
+
+        TextAdapter nutritionAdapter = new TextAdapter(nutritionFacts);
+        calorieRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        calorieRecyclerView.setAdapter(nutritionAdapter);
 
 
         builder.setPositiveButton("Edit", (dialog, which) -> {
-            Intent intent = new Intent(RecipeListActivity.this, EditRecipeActivity.class);
+            Intent intent = new Intent(RecipeListActivity.this, CreateRecipeActivity.class);
             intent.putExtra("RECIPE_ID", recipe.getId());
             startActivity(intent);
         });
