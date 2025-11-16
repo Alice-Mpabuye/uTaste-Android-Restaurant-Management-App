@@ -143,4 +143,50 @@ public class IngredientInstrumentedTest {
 
         assertEquals(before, after);
     }
+
+    @Test
+    public void testUpdateIngredientQuantityInRecipe() {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.execSQL("INSERT INTO recipe (name) VALUES ('Pancake')");
+        int recipeId = 1;
+
+        Ingredient sugar = dbHelper.getIngredientByName("Sugar");
+        dbHelper.addIngredientToRecipe(recipeId, sugar.getId(), 20);
+
+        // Update quantity
+        db.execSQL("UPDATE recipe_ingredient SET quantity=45 WHERE recipe_id=1 AND ingredient_id=?",
+                new Object[]{sugar.getId()});
+
+        Cursor c = db.rawQuery(
+                "SELECT quantity FROM recipe_ingredient WHERE recipe_id=1 AND ingredient_id=?",
+                new String[]{String.valueOf(sugar.getId())}
+        );
+
+        assertTrue(c.moveToFirst());
+        assertEquals(45.0, c.getDouble(0), 0.01);
+        c.close();
+    }
+
+    @Test
+    public void testRemoveIngredientFromRecipe() {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.execSQL("INSERT INTO recipe (name) VALUES ('Smoothie')");
+        int recipeId = 1;
+
+        Ingredient sugar = dbHelper.getIngredientByName("Sugar");
+        dbHelper.addIngredientToRecipe(recipeId, sugar.getId(), 10);
+
+        db.execSQL("DELETE FROM recipe_ingredient WHERE recipe_id=1 AND ingredient_id=?",
+                new Object[]{sugar.getId()});
+
+        Cursor c = db.rawQuery(
+                "SELECT COUNT(*) FROM recipe_ingredient WHERE recipe_id=1 AND ingredient_id=?",
+                new String[]{String.valueOf(sugar.getId())}
+        );
+
+        assertTrue(c.moveToFirst());
+        assertEquals(0, c.getInt(0));
+        c.close();
+    }
+
 }
