@@ -66,3 +66,4 @@ Rien a changé depuis le dernier livrable
 2. Cloner le dépôt :
    ```bash
    git clone https://github.com/uOttawa-2025-2026-seg2505-projet/Groupe-33-repo.git
+3. Ouvrir le dossier dans Android Studio, attendre pour les imports et Gradle sync et ensuite cliquer sur Run. 
