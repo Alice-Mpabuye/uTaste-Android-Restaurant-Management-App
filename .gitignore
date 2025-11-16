@@ -1,33 +1,31 @@
-<<<<<<< HEAD
 # AndroidStudio/Java .gitignore content
-target/
-*.iml
-*.apk
-*.log
-*.zip
-*.jar
-*.class
-*.dex
-*.so
-*.bak
-*.swp
-*.swo
-*.idea/
-*.gradle/
-=======
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
->>>>>>> 9cc7671 (Groupe-33-repo)
+
+# Ignore build output
+/build/
+app/build/
+
+# Local configuration
 local.properties
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+
+# Gradle cache
+/.gradle/
+
+# DO NOT ignore gradle wrapper
+!gradle/wrapper/gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/libs.versions.toml
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+
+# NDK / external builds
+.cxx/
+externalNativeBuild/
+captures/
