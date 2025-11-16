@@ -56,6 +56,7 @@ Rien a changé depuis le dernier livrable
 3. Tester les fonctionnalités accessibles selon le rôle :
    - Admin : voir les fonctionnalités au-dessus
    - Chef : voir les fonctionnalités au-dessus
+      - Note pour l'ajout d'ingrédients lors de la création d'une recette: Va sur le site https://world.openfoodfacts.org/, recherche n'importe quel ingrédient et scan le code bar avec ton téléphone (disponible en cliquant sur "Add Ingredient" lors de la création d'une recette).
    - Waiter : voir les fonctionnalités au-dessus
 4. Se déconnecter et répéter avec un autre rôle.
 
