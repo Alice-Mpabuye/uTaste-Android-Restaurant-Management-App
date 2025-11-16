@@ -65,4 +65,4 @@ Rien a changé depuis le dernier livrable
 1. Ouvrir Android Studio
 2. Cloner le dépôt :
    ```bash
-   git clone https://github.com/uOttawa-SEG2505/Groupe-33-repo.git
+   git clone https://github.com/uOttawa-2025-2026-seg2505-projet/Groupe-33-repo.git
