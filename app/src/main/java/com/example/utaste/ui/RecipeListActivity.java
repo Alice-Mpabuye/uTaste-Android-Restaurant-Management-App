@@ -28,11 +28,15 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
     private TextView textViewEmpty;
     private Button btnAddRecipe, btnGoToChef;
     private RecipeRepository recipeRepository;
+    private boolean isReadOnly = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_list);
+
+        isReadOnly = getIntent().getBooleanExtra("IS_READ_ONLY", false);
 
         recipeRepository = RecipeRepository.getInstance();
 
@@ -40,6 +44,7 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
         textViewEmpty = findViewById(R.id.textViewEmpty);
         btnAddRecipe = findViewById(R.id.btnAddRecipe);
         btnGoToChef = findViewById(R.id.btnGoToChef);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         btnAddRecipe.setOnClickListener(v -> {
@@ -64,7 +69,9 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
         if (recipeList == null || recipeList.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
             textViewEmpty.setVisibility(View.VISIBLE);
-            btnAddRecipe.setVisibility(View.VISIBLE);
+            if (!isReadOnly) {
+                btnAddRecipe.setVisibility(View.VISIBLE);
+            }
         } else {
             recyclerView.setVisibility(View.VISIBLE);
             textViewEmpty.setVisibility(View.GONE);
@@ -109,7 +116,7 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
         for (RecipeIngredient ingredient : ingredients) {
             double quantityFactor = ingredient.getQuantity() / 100.0;
             totalFat += ingredient.getFat() * quantityFactor;
-            totalCarbs += ingredient.getCarbs() * quantityFactor; // Corrected method name
+            totalCarbs += ingredient.getCarbs() * quantityFactor;
             totalProtein += ingredient.getProtein() * quantityFactor;
         }
         double totalCalories = (totalFat * 9) + (totalCarbs * 4) + (totalProtein * 4);
@@ -124,25 +131,26 @@ public class RecipeListActivity extends AppCompatActivity implements RecipeAdapt
         calorieRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         calorieRecyclerView.setAdapter(nutritionAdapter);
 
+        if(!isReadOnly) {
+            builder.setPositiveButton("Edit", (dialog, which) -> {
+                Intent intent = new Intent(RecipeListActivity.this, CreateRecipeActivity.class);
+                intent.putExtra("RECIPE_ID", recipe.getId());
+                startActivity(intent);
+            });
 
-        builder.setPositiveButton("Edit", (dialog, which) -> {
-            Intent intent = new Intent(RecipeListActivity.this, CreateRecipeActivity.class);
-            intent.putExtra("RECIPE_ID", recipe.getId());
-            startActivity(intent);
-        });
-
-        builder.setNegativeButton("Delete", (dialog, which) -> {
-            new AlertDialog.Builder(this)
-                    .setTitle("Delete Recipe")
-                    .setMessage("Are you sure you want to delete this recipe?")
-                    .setPositiveButton("Yes", (d, w) -> {
-                        recipeRepository.deleteRecipe(recipe.getId());
-                        Toast.makeText(this, "Recipe deleted", Toast.LENGTH_SHORT).show();
-                        updateRecipeList();
-                    })
-                    .setNegativeButton("No", null)
-                    .show();
-        });
+            builder.setNegativeButton("Delete", (dialog, which) -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Delete Recipe")
+                        .setMessage("Are you sure you want to delete this recipe?")
+                        .setPositiveButton("Yes", (d, w) -> {
+                            recipeRepository.deleteRecipe(recipe.getId());
+                            Toast.makeText(this, "Recipe deleted", Toast.LENGTH_SHORT).show();
+                            updateRecipeList();
+                        })
+                        .setNegativeButton("No", null)
+                        .show();
+            });
+        }
 
         builder.setNeutralButton("Close", (dialog, which) -> dialog.dismiss());
         builder.create().show();

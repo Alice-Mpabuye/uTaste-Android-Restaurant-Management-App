@@ -17,7 +17,7 @@ import com.example.utaste.model.User;
 
 public class WaiterActivity extends AppCompatActivity {
 
-    private Button btnLogout, btnChangePassword;
+    private Button btnLogout, btnChangePassword, btnViewRecipe;
     private String currentWaiterEmail = null;
     private UserRepository userRepository;
 
@@ -32,6 +32,9 @@ public class WaiterActivity extends AppCompatActivity {
 
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        btnViewRecipe = findViewById(R.id.btnViewRecipes);
+
+        // Check if user email is available in intent
 
         if (getIntent() != null && getIntent().hasExtra("userEmail")) {
             currentWaiterEmail = getIntent().getStringExtra("userEmail");
@@ -49,6 +52,12 @@ public class WaiterActivity extends AppCompatActivity {
             } else {
                 showChangePasswordDialog(currentWaiterEmail);
             }
+        });
+
+        btnViewRecipe.setOnClickListener(v -> {
+            Intent i = new Intent(WaiterActivity.this, RecipeListActivity.class);
+            i.putExtra("IS_READ_ONLY", true);
+            startActivity(i);
         });
     }
 

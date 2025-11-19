@@ -17,9 +17,11 @@
     <Button
         android:id="@+id/btnViewRecipes"
         android:text="View Recipes"
-        android:enabled="false"
+        android:enabled="true"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/pink_40"
+        android:textColor="@color/white"/>
 
     <Button
         android:id="@+id/btnRecordSale"
