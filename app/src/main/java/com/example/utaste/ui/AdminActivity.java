@@ -9,6 +9,7 @@ import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.utaste.R;
+import com.example.utaste.data.SaleRepository;
 import com.example.utaste.data.UserRepository;
 import com.example.utaste.model.User;
 import com.example.utaste.util.Validators;
@@ -37,7 +38,7 @@ public class AdminActivity extends AppCompatActivity {
 
         btnCreateWaiter = findViewById(R.id.btnCreateWaiter);
         btnResetDB = findViewById(R.id.btnResetDB);
-        btnManageProfiles = findViewById(R.id.btnManageProfiles);
+
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
         btnResetSelfPassword = findViewById(R.id.btnResetSelfPassword);
@@ -411,6 +412,7 @@ public class AdminActivity extends AppCompatActivity {
         boolean success = false;
         try {
             UserRepository.getInstance().resetDatabase();
+            SaleRepository.getInstance().clearAllSales();
             success = true;
         } catch (Exception e) {
             e.printStackTrace();

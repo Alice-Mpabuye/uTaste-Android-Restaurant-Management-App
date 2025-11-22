@@ -11,7 +11,7 @@ import java.util.List;
 
 public class UserDbHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "utaste.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     public static final String TABLE_USERS = "users";
     public static final String COL_EMAIL = "email";
@@ -59,6 +59,14 @@ public class UserDbHelper extends SQLiteOpenHelper {
                     "quantity REAL, " +
                     "PRIMARY KEY(recipe_id, ingredient_id))";
 
+    private static final String CREATE_TABLE_SALES =
+            "CREATE TABLE sales (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "recipe_id INTEGER NOT NULL," +
+                    "rating INTEGER NOT NULL," +
+                    "note TEXT," +
+                    "created_at INTEGER NOT NULL" +
+                    ");";
     public UserDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -69,12 +77,13 @@ public class UserDbHelper extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_INGREDIENT);
         db.execSQL(CREATE_TABLE_RECIPE);
         db.execSQL(CREATE_TABLE_RECIPE_INGREDIENT);
-
+        db.execSQL(CREATE_TABLE_SALES);
 
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldV, int newV) {
+        db.execSQL("DROP TABLE IF EXISTS sales");
         db.execSQL("DROP TABLE IF EXISTS recipe_ingredient");
         db.execSQL("DROP TABLE IF EXISTS recipe");
         db.execSQL("DROP TABLE IF EXISTS Ingredient");
