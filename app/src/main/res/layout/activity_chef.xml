@@ -19,7 +19,7 @@
         android:text="Create Recipe"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/pink_40"
+        android:backgroundTint="@color/purple_40"
         android:textColor="@color/white"/>
 
     <Button
@@ -27,7 +27,7 @@
         android:text="My Recipes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/pink_40"
+        android:backgroundTint="@color/purple_grey_40"
         android:textColor="@color/white"/>
 
     <Button
