@@ -17,16 +17,28 @@
     <Button
         android:id="@+id/btnViewRecipes"
         android:text="View Recipes"
-        android:enabled="false"
+        android:enabled="true"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/purple_grey_40"
+        android:textColor="@color/white"/>
+
+    <Button
+        android:id="@+id/btnSalesSummary"
+        android:text="Sales summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/purple_grey_40"
+        android:textColor="@android:color/white"/>
 
     <Button
         android:id="@+id/btnRecordSale"
         android:text="Record Sale"
         android:enabled="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/purple_40"
+        android:textColor="@color/white"/>
 
     <Button
         android:id="@+id/btnChangePassword"

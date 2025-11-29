@@ -63,7 +63,7 @@ package "com.example.utaste.data" {
     }
 
     class RecipeRepository {
-        - RecipeRepository: instance
+        - static instance: RecipeRepository
         - dbHelper: UserDbHelper
         - RecipeRepository(context: Context)
         + static synchronized init(context: Context): void
@@ -77,6 +77,37 @@ package "com.example.utaste.data" {
         + getIngredientsForRecipe(recipeId: int): List<RecipeIngredient>
         + insertIngredient(Ingredient ing): long
         + clearIngredientsForRecipe(recipeId: int): void
+    }
+
+    class Sale{
+        - id: long
+        - recipeId: int
+        - recipeName: String
+        - rating: int
+        - note: String
+        - timestamp: long
+        + Sale(id: long, recipeId: int, recipeName: String, rating: int, note: String, timestamp: long)
+        + getId(): long
+        + getRecipeId(): int
+        + getRecipeName(): String
+        + getRating(): int
+        + getNote(): String
+        + getTimestamp(): long
+    }
+
+    class SaleRepository {
+        - static instance: SaleRepository
+        - dbHelper: UserDbHelper
+        - sales: List<Sale>
+        - SaleRepository(context: Context)
+        + static synchronized init(context: Context): void
+        + static synchronized getInstance(): SaleRepository
+        + recordSale(recipeId: int, rating: int, note: String): long
+        + listAllSales(): List<Sale>
+        + listSalesGroupedByRecipe(): Map<Integer, List<Sale>>
+        + getCountForRecipe(recipeId: int): int
+        + getAverageRatingForRecipe(recipeId: int): double
+        + clearAllSales(): void
     }
 
     class UserDbHelper {
@@ -118,10 +149,15 @@ package "com.example.utaste.data" {
 
     '============ relationships ============
     UserDbHelper -|> SQLiteOpenHelper
+    
     RecipeRepository ..> UserDbHelper
     RecipeRepository --> Recipe
     RecipeRepository --> RecipeIngredient
+    
     UserRepository --> User
+
+    'SaleRepository --> Sale : fournit des listes de ventes
+    'SaleRepository --> Recipe : id de référence
 }
 
 
@@ -325,6 +361,62 @@ package "com.example.utaste.ui" {
         + void onRecipeClick(Recipe recipe)
     }
 
+    class RecordSaleActivity {
+        - spinnerRecipes : Spinner
+        - spinnerRating : Spinner
+        - etNote : EditText
+        - btnRecord : Button
+
+        - recipeRepository : RecipeRepository
+        - saleRepository : SaleRepository
+        - recipes : List<Recipe>
+
+        + onCreate(Bundle) : void
+        - recordSale() : void
+    }
+
+    class SalesSummaryAtivity {
+        - rvSummary : RecyclerView
+        - adapter : SalesSummaryAdapter
+        - saleRepository : SaleRepository
+
+        + onCreate(Bundle) : void
+        + onResume() : void
+        - loadSummary() : void
+    }
+
+
+    class SalesSummaryAdapter {
+        - static TYPE_HEADER : int
+        - static TYPE_SALE : int
+        - items : List<Object>
+
+        + setData(List<Object>) : void
+        + getItemViewType(int) : int
+        + getItemCount() : int
+        + onCreateViewHolder(ViewGroup, int) : RecyclerView.ViewHolder
+        + onBindViewHolder(RecyclerView.ViewHolder, int) : void
+        - getStars(int) : String
+    }
+
+
+    class HeaderModel {
+        + recipeName: String
+        + count: int
+        + avgRating: double
+    }
+
+    class HeaderHolder {
+        + tvName : TextView
+        + tvStats : TextView
+    }
+
+    class SaleHolder {
+        + tvMeta : TextView
+        + tvNote : TextView
+    }
+
+
     class TextAdapter{
         - localdata: List<String>
         + TextAdapter()
@@ -379,6 +471,30 @@ package "com.example.utaste.ui" {
     RecipeListActivity --> TextAdapter
     RecipeListActivity ..> RecipeRepository
     
+    RecordSaleActivity -|> AppCompatActivity
+    RecordSaleActivity --> RecipeRepository : utilise (singleton)
+    RecordSaleActivity --> SaleRepository : utilise (singleton)
+    RecordSaleActivity --> Recipe : lit les données
+    RecordSaleActivity --> WaiterActivity : navigation Intent
+    RecipeRepository --> Recipe : fournit listes
+
+    
+    SalesSummaryActivity --|> AppCompatActivity
+    
+    SalesSummaryActivity --> SalesSummaryAdapter : crée/associe
+    SalesSummaryActivity --> SaleRepository : utilise (singleton)
+    SalesSummaryActivity --> WaiterActivity : navigation Intent
+
+    SalesSummaryAdapter ..> SaleRepository
+    SalesSummaryAdapter o--> "0..*" Object : items
+    SalesSummaryAdapter --> RecyclerView.ViewHolder : crée / utilise
+    SalesSummaryAdapter --> Sale : affiche
+
+    HeaderModel --* SalesSummaryAdapter : "contient"
+    HeaderHolder --|> RecyclerView.ViewHolder
+    SaleHolder --|> RecyclerView.ViewHolder
+
+
     RecipeAdapter -|> RecyclerView.Adapter
     RecipeAdapter o-- Recipe
 
@@ -410,4 +526,11 @@ package "com.example.utaste.util" {
         + static String validateNewUser(String email, String password)
     }
 }
+
+'=========================
+'EXTRA
+'=========================
+
+
+
 @enduml

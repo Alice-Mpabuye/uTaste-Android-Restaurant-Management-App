@@ -12,12 +12,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.utaste.R;
+import com.example.utaste.data.SaleRepository;
 import com.example.utaste.data.UserRepository;
 import com.example.utaste.model.User;
 
+import android.content.res.ColorStateList;
+import androidx.core.content.ContextCompat;
+
 public class WaiterActivity extends AppCompatActivity {
 
-    private Button btnLogout, btnChangePassword;
+    private Button btnLogout, btnChangePassword, btnViewRecipe, btnRecordSale, btnSalesSummary;
     private String currentWaiterEmail = null;
     private UserRepository userRepository;
 
@@ -30,9 +34,17 @@ public class WaiterActivity extends AppCompatActivity {
         userRepository = UserRepository.getInstance();
         userRepository.init(getApplicationContext());
 
+        // init SaleRepository
+        SaleRepository.init(getApplicationContext());
+
         btnLogout = findViewById(R.id.btnLogout);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        btnViewRecipe = findViewById(R.id.btnViewRecipes);
+        btnRecordSale = findViewById(R.id.btnRecordSale);
 
+        btnSalesSummary = findViewById(R.id.btnSalesSummary);
+
+        // get intent data
         if (getIntent() != null && getIntent().hasExtra("userEmail")) {
             currentWaiterEmail = getIntent().getStringExtra("userEmail");
         }
@@ -49,6 +61,24 @@ public class WaiterActivity extends AppCompatActivity {
             } else {
                 showChangePasswordDialog(currentWaiterEmail);
             }
+        });
+
+        btnViewRecipe.setOnClickListener(v -> {
+            Intent i = new Intent(WaiterActivity.this, RecipeListActivity.class);
+            i.putExtra("IS_READ_ONLY", true);
+            startActivity(i);
+        });
+
+        // enable RecordSale and navigate
+        btnRecordSale.setEnabled(true);
+        btnRecordSale.setOnClickListener(v -> {
+            Intent i = new Intent(WaiterActivity.this, RecordSaleActivity.class);
+            startActivity(i);
+        });
+
+        btnSalesSummary.setOnClickListener(v -> {
+            Intent i = new Intent(WaiterActivity.this, SalesSummaryActivity.class);
+            startActivity(i);
         });
     }
 

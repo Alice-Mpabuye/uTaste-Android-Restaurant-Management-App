@@ -33,15 +33,6 @@
     <!-- J'ai enlever le enable button -->
 
     <Button
-        android:id="@+id/btnManageProfiles"
-        android:text="Manage Profiles"
-        android:backgroundTint="@color/purple_grey_40"
-        android:textColor="@color/white"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:enabled="false"/>
-
-    <Button
         android:id="@+id/btnChangePassword"
         android:text="Change Password"
         android:backgroundTint="@color/pink_40"
