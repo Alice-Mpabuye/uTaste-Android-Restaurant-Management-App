@@ -6,9 +6,9 @@ Ceci est notre fichier README au format Markdown contenant des informations util
 - Un scénario de validation de notre livrable
 - Des limites éventuelles (anomalie, fonctionnalité manquante...)
 
-## Première version de notre modèle conceptuel
-![Diagramme V3](diagramV3.png)
-Le fichier source PlantUML est disponible dans `doc/diagramV3.puml`.
+## Modèle conceptuel
+![Diagramme V4](diagramV4.png)
+Le fichier source PlantUML est disponible dans `doc/diagramV4.puml`.
 
 ## Description de notre projet
 uTaste est une application Android développée en Java avec Android Studio dans le cadre du cours SEG2505 – Conception et implémentation logicielle à l’Université d’Ottawa. L’objectif est de créer une solution logicielle complète pour la gestion d’un restaurant gastronomique, intégrant des rôles utilisateurs : administrateur, chef cuisinier et serveur.
@@ -17,8 +17,7 @@ uTaste est une application Android développée en Java avec Android Studio dans
 Les fonctionnalités principales implémentées depuis le dernier livrable pour chaque rôle sont ;
 
 **Hors rôle :**
-- Des tests unitaires automatisés de niveau API sont en place pour valider la gestion des utilisateurs
-- Des tests unitaires automatisés de niveau API sont en place pour valider la gestion des ingrédients d’une recette.
+- Le rapport final a été créé et se trouve dans le même dossier que ce readme
 
 **Administrateur :**
 
@@ -31,15 +30,17 @@ Rien a changé depuis le dernier livrable
 - Réinitialiser son propre mot de passe
  
 **Chef :**
+
+Rien a changé depuis le dernier livrable
 -  peut obtenir des informations nutritionnelles pertinentes sur chaque ingrédient
 -  peut calculer le bilan calorique, en glucides, protides et lipides de la recette
 
 **Serveur/Vendeur :**
-
-Rien a changé depuis le dernier livrable
-- S’authentifier
-- Changer son propre mot de passe
-- Se déconnecter
+- Un vendeur peut voir la liste des recettes et leur bilan calorique
+- Un vendeur peut enregistrer une vente avec une note et une appréciation
+- Un vendeur peut avoir un bilan des ventes contenant :
+  - la liste des recettes vendues et le nombre de ventes pour chaque recette
+  - la note moyenne de chaque recette
  
 ## Limites éventuelle
 - Nécessite l'accès à l'internet
