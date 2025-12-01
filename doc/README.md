@@ -6,19 +6,28 @@ Ceci est notre fichier README au format Markdown contenant des informations util
 - Un scénario de validation de notre livrable
 - Des limites éventuelles (anomalie, fonctionnalité manquante...)
 
-## Modèle conceptuel
+## Modèles conceptuels
+###  Diagramme de classes
 ![Diagramme de classe](diagram_Images/Class_diagramV4/Class_diagramV4.jpg)
 Le fichier source PlantUML est disponible dans `doc/Class_diagramV4.puml`.
 
+---
+### Diagramme d'activité – Création de recette
 ![Diagramme d'activité](diagram_Images/Activity_diagram_recipeCretation/Activity_diagram_recipeCretation.png)
 Le fichier source PlantUML est disponible dans `doc/Activity_diagram_recipeCretation.puml`.
 
+---
+### Diagramme de séquence – Suppression de recette
 ![Diagramme de sequence - Suppression de Recette](diagram_Images/Delete_Recipe/Delete_Recipe.png)
 Le fichier source PlantUML est disponible dans `doc\Les diagramme de sequence\Delete_Recipe.puml`.
 
+---
+### Diagramme de séquence – Modification de recette
 ![Diagramme de sequence - Modification de Recette](diagram_Images/ModifyRecipe/ModifyRecipe.png)
 Le fichier source PlantUML est disponible dans `doc\Les diagramme de sequence\ModifyRecipe.puml`.
 
+---
+### Diagramme de séquence – Ajout d’ingrédient & Récupération des nutriments
 ![Diagramme de sequence - Ajout d'ingredient et recuperation de nutriment](diagram_Images/AddIngredient_&_FetchNutriment/AddIngredient_&_FetchNutriment.png)
 Le fichier source PlantUML est disponible dans `doc\Les diagramme de sequence\AddIngredient_&_FetchNutriment.puml`.
 
