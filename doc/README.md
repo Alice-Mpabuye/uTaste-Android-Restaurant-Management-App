@@ -7,8 +7,21 @@ Ceci est notre fichier README au format Markdown contenant des informations util
 - Des limites éventuelles (anomalie, fonctionnalité manquante...)
 
 ## Modèle conceptuel
-![Diagramme V4](diagramV4.png)
-Le fichier source PlantUML est disponible dans `doc/diagramV4.puml`.
+![Diagramme de classe](diagram_Images/Class_diagramV4/Class_diagramV4.jpg)
+Le fichier source PlantUML est disponible dans `doc/Class_diagramV4.puml`.
+
+![Diagramme d'activité](diagram_Images/Activity_diagram_recipeCretation/Activity_diagram_recipeCretation.png)
+Le fichier source PlantUML est disponible dans `doc/Activity_diagram_recipeCretation.puml`.
+
+![Diagramme de sequence - Suppression de Recette](diagram_Images/Delete_Recipe/Delete_Recipe.png)
+Le fichier source PlantUML est disponible dans `doc\Les diagramme de sequence\Delete_Recipe.puml`.
+
+![Diagramme de sequence - Modification de Recette](diagram_Images/ModifyRecipe/ModifyRecipe.png)
+Le fichier source PlantUML est disponible dans `doc\Les diagramme de sequence\ModifyRecipe.puml`.
+
+![Diagramme de sequence - Ajout d'ingredient et recuperation de nutriment](diagram_Images/AddIngredient_&_FetchNutriment/AddIngredient_&_FetchNutriment.png)
+Le fichier source PlantUML est disponible dans `doc\Les diagramme de sequence\AddIngredient_&_FetchNutriment.puml`.
+
 
 ## Description de notre projet
 uTaste est une application Android développée en Java avec Android Studio dans le cadre du cours SEG2505 – Conception et implémentation logicielle à l’Université d’Ottawa. L’objectif est de créer une solution logicielle complète pour la gestion d’un restaurant gastronomique, intégrant des rôles utilisateurs : administrateur, chef cuisinier et serveur.

@@ -1,0 +1,20 @@
+@startuml
+actor User
+
+participant RecipeListActivity as RLA
+participant RecipeRepository as Repo
+participant UserDbHelper as DB
+
+User -> RLA: Click on a recipe
+RLA -> User: Display AlertDialog with details
+User -> RLA: Click on “Delete”
+RLA -> User: Display confirmation AlertDialog “Are you sure?”
+User -> RLA: Click on “Yes”
+RLA -> Repo: deleteRecipe(id)
+Repo -> DB: DELETE FROM recipe_ingredient WHERE recipe_id = ?
+Repo -> DB: DELETE FROM recipe WHERE id = ?
+DB --> Repo: Confirmation
+Repo --> RLA: Confirmation
+RLA -> RLA: updateRecipeList() to refresh display
+
+@enduml

@@ -1,0 +1,30 @@
+@startuml
+actor User
+
+participant RecipeListActivity as RLA
+participant CreateRecipeActivity as CRA
+participant RecipeRepository as Repo
+participant UserDbHelper as DB
+
+User -> RLA: Click on a recipe in RecyclerView
+RLA -> User: Display AlertDialog with details
+User -> RLA: Click on “Edit”
+RLA -> CRA: Create Intent and set “RECIPE_ID”
+CRA -> CRA: onCreate() retrieves the ID
+CRA -> Repo: getRecipeById(id)
+Repo -> DB: SELECT * FROM recipe WHERE id = ?
+DB --> Repo: Returns recipe data
+Repo --> CRA: Recipe object
+CRA -> CRA: Fills in UI fields (name, description, etc.)
+User -> CRA: Modifies the recipe name
+User -> CRA: Click on “Update Recipe”
+CRA -> Repo: updateRecipe(id, name, etc.)
+Repo -> DB: UPDATE recipe SET ... WHERE id=?
+DB --> Repo: Confirmation
+Repo --> CRA: Confirmation
+CRA -> CRA: finish()
+CRA --> RLA: Return to RecipeListActivity
+RLA -> RLA: onResume()
+RLA -> RLA: Updates the list with the modified name
+
+@enduml

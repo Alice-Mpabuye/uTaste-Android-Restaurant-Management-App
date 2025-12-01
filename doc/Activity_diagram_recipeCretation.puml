@@ -1,0 +1,51 @@
+plantuml
+@startuml
+|Chef|
+start
+:Start CreateRecipeActivity;
+:Fill in name and description;
+:Click on “Scan an ingredient”;
+
+|CreateRecipeActivity|
+:Launch barcode scanner;
+
+|System (Scanner)|
+:Open camera and scan;
+:Return barcode string;
+
+|CreateRecipeActivity|
+:Receive barcode;
+:Query the OpenFoodFacts API;
+
+|API OpenFoodFacts|
+:Return product data (JSON);
+
+|CreateRecipeActivity|
+if (Ingredient found ?) then (Yes)
+  :Display nutritional information;
+  :Request quantity from user;
+else (No)
+  :Display "Ingredient not found" message;
+  stop
+endif
+
+|Chef|
+:Enter quantity and confirm;
+
+|CreateRecipeActivity|
+:Add ingredient to local list;
+:Click on “Save recipe”;
+:Call save() on RecipeRepository;
+
+|RecipeRepository|
+:Execute INSERT/UPDATE in Database;
+:Return success;
+
+|CreateRecipeActivity|
+:Display "Recipe Saved" message;
+:Finish activity;
+
+|System|
+:Return to previous screen;
+stop
+@enduml

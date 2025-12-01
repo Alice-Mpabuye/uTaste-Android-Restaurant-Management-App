@@ -1,0 +1,32 @@
+@startuml
+actor User
+
+participant CreateRecipeActivity as CRA
+participant ZXingScanner as Scanner
+participant OpenFoodFactsAPI as API
+participant RecipeRepository as Repo
+participant UserDbHelper as DB
+
+User -> CRA: Click on “Scan Ingredient”
+CRA -> Scanner: Launch the barcode scanner
+User -> Scanner: Scan the barcode
+Scanner --> CRA: Return barcode
+
+CRA -> CRA: fetchNutritionFromOpenFoodFacts(barcode)
+CRA -> API: HTTP GET request for barcode
+API --> CRA: JSON produced with nutritional information
+CRA -> CRA: Extract nutritional information
+CRA -> User: Display AlertDialog “Info + Add to Recipe”
+
+User -> CRA: Click “Add to Recipe”
+CRA -> User: Display AlertDialog to enter quantity
+User -> CRA: Enter quantity and click “Add”
+
+CRA -> Repo: insertIngredient(ingredient)
+Repo -> DB: INSERT INTO Ingredient
+DB --> Repo: Confirmation
+Repo --> CRA: Confirmation
+
+CRA -> CRA: Updates RecyclerView to display ingredient
+
+@enduml
